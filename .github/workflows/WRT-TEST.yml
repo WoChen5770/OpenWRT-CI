@@ -10,20 +10,10 @@ on:
   workflow_dispatch:
     inputs:
       CONFIG:
-        default: 'MEDIATEK-WIFI-YES'
+        default: 'X86'
         required: true
         type: choice
         options:
-          - IPQ53XX-WIFI-NO
-          - IPQ60XX-WIFI-NO
-          - IPQ60XX-WIFI-YES
-          - IPQ807X-WIFI-NO
-          - IPQ807X-WIFI-YES
-          - IPQ95XX-WIFI-YES
-          - MEDIATEK-WIFI-NO
-          - MEDIATEK-WIFI-YES
-          - ROCKCHIP
-          - TEST
           - X86
       SOURCE:
         default: 'VIKINGYFY/immortalwrt'
@@ -68,7 +58,7 @@ jobs:
       #默认WIFI密码
       WRT_WORD: 12345678
       #默认地址
-      WRT_IP: 192.168.10.1
+      WRT_IP: 192.168.123.1
       #默认密码，仅作提示，修改无用
       WRT_PW: 无
       #源码链接

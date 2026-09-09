@@ -42,6 +42,32 @@ UPDATE_PACKAGE() {
 	fi
 }
 
+#从大杂烩仓库中提取一组相互依赖的软件包目录
+UPDATE_PACKAGE_GROUP() {
+	local PKG_REPO=$1
+	local PKG_BRANCH=$2
+	shift 2
+	local PKG_NAMES=("$@")
+	local REPO_NAME=${PKG_REPO#*/}
+
+	echo " "
+	for NAME in "${PKG_NAMES[@]}"; do
+		find ./ ../feeds/luci/ ../feeds/packages/ -maxdepth 3 -type d -name "$NAME" \
+			-prune -exec rm -rf {} + 2>/dev/null || true
+	done
+
+	git clone --depth=1 --single-branch --branch "$PKG_BRANCH" "https://github.com/$PKG_REPO.git"
+	for NAME in "${PKG_NAMES[@]}"; do
+		if [ ! -d "./$REPO_NAME/$NAME" ]; then
+			echo "Package directory not found: $NAME"
+			rm -rf "./$REPO_NAME"
+			return 1
+		fi
+		cp -rf "./$REPO_NAME/$NAME" ./
+	done
+	rm -rf "./$REPO_NAME"
+}
+
 # 调用示例
 # UPDATE_PACKAGE "OpenAppFilter" "destan19/OpenAppFilter" "master" "" "custom_name1 custom_name2"
 # UPDATE_PACKAGE "open-app-filter" "destan19/OpenAppFilter" "master" "" "luci-app-appfilter oaf" 这样会把原有的open-app-filter，luci-app-appfilter，oaf相关组件删除，不会出现coremark错误。
@@ -64,13 +90,15 @@ UPDATE_PACKAGE "passwall2" "Openwrt-Passwall/openwrt-passwall2" "main" "pkg"
 
 UPDATE_PACKAGE "ddns-go" "sirpdboy/luci-app-ddns-go" "main"
 UPDATE_PACKAGE "diskman" "sbwml/luci-app-diskman" "main"
-UPDATE_PACKAGE "diskmanager" "4IceG/luci-app-mini-diskmanager" "main"
 UPDATE_PACKAGE "easytier" "EasyTier/luci-app-easytier" "main"
+UPDATE_PACKAGE "luci-app-adguardhome-dashboard" "imonior/luci-app-adguardhome-dashboard" "main"
+cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/luci-app-adguardhome-dashboard.mk" \
+	./luci-app-adguardhome-dashboard/Makefile
+UPDATE_PACKAGE_GROUP "kenzok8/small" "master" "dae" "daed" "luci-app-daede" "v2ray-geodata"
 UPDATE_PACKAGE "mosdns" "sbwml/luci-app-mosdns" "v5" "" "v2dat"
 UPDATE_PACKAGE "netspeedtest" "sirpdboy/netspeedtest" "main" "" "homebox ookla-speedtest"
 UPDATE_PACKAGE "netwizard" "sirpdboy/luci-app-netwizard" "main"
 UPDATE_PACKAGE "openlist2" "sbwml/luci-app-openlist2" "main"
-UPDATE_PACKAGE "partexp" "sirpdboy/luci-app-partexp" "main"
 UPDATE_PACKAGE "qbittorrent" "sbwml/luci-app-qbittorrent" "master" "" "qt6base qt6tools rblibtorrent"
 UPDATE_PACKAGE "qmodem" "FUjr/QModem" "main"
 UPDATE_PACKAGE "quickfile" "sbwml/luci-app-quickfile" "main"
