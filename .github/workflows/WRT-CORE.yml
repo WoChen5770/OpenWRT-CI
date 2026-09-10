@@ -81,7 +81,7 @@ jobs:
           sudo -E apt -yqq autoremove --purge
           sudo -E apt -yqq autoclean
           sudo -E apt -yqq clean
-          sudo -E apt -yqq install dos2unix libfuse-dev
+          sudo -E apt -yqq install dos2unix libfuse-dev clang llvm lld
           sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
           sudo -E systemctl daemon-reload
           sudo -E timedatectl set-timezone "Asia/Shanghai"
@@ -183,7 +183,26 @@ jobs:
 
           $GITHUB_WORKSPACE/Scripts/Settings.sh
 
-          make defconfig -j$(nproc) && make clean -j$(nproc)
+          make defconfig -j$(nproc)
+
+          # Fail early when eBPF is enabled without a usable LLVM backend.
+          if grep -q '^CONFIG_HAS_BPF_TOOLCHAIN=y' .config; then
+            if grep -q '^CONFIG_USE_LLVM_HOST=y' .config; then
+              for TOOL in clang llc llvm-dis opt llvm-strip; do
+                if ! command -v "$TOOL" >/dev/null 2>&1; then
+                  echo "::error::Missing host LLVM tool required for eBPF: $TOOL"
+                  exit 1
+                fi
+              done
+              clang --version
+            elif ! grep -Eq '^CONFIG_USE_LLVM_(PREBUILT|BUILD)=y' .config; then
+              echo "::error::eBPF is enabled, but no LLVM toolchain backend is selected."
+              grep -E 'CONFIG_(BPF_TOOLCHAIN|HAS_BPF_TOOLCHAIN|NEED_BPF_TOOLCHAIN|USE_LLVM)' .config || true
+              exit 1
+            fi
+          fi
+
+          make clean -j$(nproc)
 
       - name: Download Packages
         if: ${{ !inputs.WRT_TEST }}
