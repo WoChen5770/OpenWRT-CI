@@ -1,0 +1,26 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 VIKINGYFY
+# 固件首次开机自动执行：
+#   - x86 平台移除无意义的硬件流量卸载（flow_offloading_hw），保留软件流量卸载（flow_offloading）
+#   - 启用 BBR 拥塞控制 + fq 公平队列 + TCP Fast Open（可调）
+
+# x86 无硬件 NAT 卸载引擎，删除该选项（保留软件卸载 flow_offloading=1）
+uci -q delete firewall.@defaults[0].flow_offloading_hw
+uci commit firewall
+
+# 写入 sysctl 优化
+SYSCTL_TUNE="/etc/sysctl.d/99-openwrt-tune.conf"
+
+[ -f "$SYSCTL_TUNE" ] || cat > "$SYSCTL_TUNE" <<'EOF'
+# OpenWrt 自定义优化
+net.ipv4.tcp_congestion_control=bbr
+net.core.default_qdisc=fq
+net.ipv4.tcp_fastopen=3
+net.core.netdev_max_backlog=4096
+net.ipv4.tcp_mtu_probing=1
+EOF
+
+sysctl -p "$SYSCTL_TUNE"
+
+exit 0

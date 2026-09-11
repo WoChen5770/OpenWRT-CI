@@ -31,11 +31,20 @@ sed -i "s/192\.168\.[0-9]*\.[0-9]*/$WRT_IP/g" $CFG_FILE
 #修改默认主机名
 sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 
+#固件首次开机自动配置脚本（HTTPS 重定向、网络调优等）
+mkdir -p ./package/base-files/files/etc/uci-defaults
+cp -f -r "$GITHUB_WORKSPACE/Scripts/uci-defaults/." \
+	./package/base-files/files/etc/uci-defaults/
+
 #配置文件修改
 echo "CONFIG_PACKAGE_luci=y" >> ./.config
 echo "CONFIG_LUCI_LANG_zh_Hans=y" >> ./.config
-echo "CONFIG_PACKAGE_luci-theme-$WRT_THEME=y" >> ./.config
-echo "CONFIG_PACKAGE_luci-app-$WRT_THEME-config=y" >> ./.config
+
+#默认集成主题，WRT_THEME 仅控制默认启用哪个主题
+echo "CONFIG_PACKAGE_luci-theme-bootstrap=y" >> ./.config
+echo "CONFIG_PACKAGE_luci-theme-noobwrt=y" >> ./.config
+echo "CONFIG_PACKAGE_luci-theme-shadcn=y" >> ./.config
+echo "CONFIG_PACKAGE_luci-theme-fluent=y" >> ./.config
 
 #引入私有扩展配置
 if [ -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" ]; then
