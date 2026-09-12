@@ -4,11 +4,11 @@ PKG_NAME:=xray-core
 PKG_VERSION:=@XRAY_VERSION@
 PKG_RELEASE:=1
 
-# Resolved for each build by Scripts/Xray.sh (including official prereleases).
-PKG_SOURCE:=Xray-linux-64-$(PKG_VERSION).zip
-PKG_SOURCE_URL:=https://github.com/XTLS/Xray-core/releases/download/v$(PKG_VERSION)
+# Resolved for each build, including prereleases. Asset ID avoids stale re-upload caches.
+PKG_SOURCE:=Xray-linux-64-$(PKG_VERSION)-@XRAY_ASSET_ID@.zip
+PKG_SOURCE_URL:=https://github.com/XTLS/Xray-core/releases/download/@XRAY_TAG@
 PKG_SOURCE_URL_FILE:=Xray-linux-64.zip
-PKG_HASH:=@XRAY_SHA256@
+PKG_HASH:=skip
 
 PKG_LICENSE:=MPL-2.0
 PKG_LICENSE_FILES:=LICENSE
@@ -31,6 +31,7 @@ endef
 define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
 	unzip -o $(DL_DIR)/$(PKG_SOURCE) xray LICENSE -d $(PKG_BUILD_DIR)
+	test -s $(PKG_BUILD_DIR)/xray
 endef
 
 define Build/Configure

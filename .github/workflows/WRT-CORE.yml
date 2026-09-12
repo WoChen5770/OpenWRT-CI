@@ -175,9 +175,12 @@ jobs:
           cd ./wrt/
 
           if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
-            cat $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt >> .config
+            cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
+          elif [[ "$WRT_CONFIG" == "X86" ]]; then
+            # X86 的虚拟机裁剪覆盖通用配置；其他平台仍沿用原来的加载顺序。
+            cat "$GITHUB_WORKSPACE/Config/GENERAL.txt" "$GITHUB_WORKSPACE/Config/X86.txt" >> .config
           else
-            cat $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt $GITHUB_WORKSPACE/Config/GENERAL.txt >> .config
+            cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" "$GITHUB_WORKSPACE/Config/GENERAL.txt" >> .config
           fi
 
           $GITHUB_WORKSPACE/Scripts/Settings.sh
@@ -192,9 +195,29 @@ jobs:
                 exit 1
               fi
             done
+
+            # 防止上游依赖把已裁剪的包重新选中；私有/手动配置允许主动覆盖默认裁剪。
+            if [[ ! -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" && -z "$WRT_PACKAGE" ]]; then
+              while IFS='=' read -r OPTION VALUE; do
+                [[ "$OPTION" == CONFIG_PACKAGE_* && "$VALUE" == n ]] || continue
+                if grep -Eq "^${OPTION}=[ym]$" .config; then
+                  echo "::error::Disabled x86 package selected after defconfig: $OPTION"
+                  exit 1
+                fi
+              done < "$GITHUB_WORKSPACE/Config/X86.txt"
+            fi
           fi
 
           make clean -j$(nproc)
+
+      # 每次先查询最新版本；缓存只复用同一版本、同一附件的 ZIP，不回退旧版本。
+      - name: Restore Xray Download Cache
+        id: xray-cache-restore
+        if: ${{ !inputs.WRT_TEST && env.XRAY_SOURCE != '' }}
+        uses: actions/cache/restore@main
+        with:
+          key: xray-download-v1-${{env.XRAY_SOURCE}}
+          path: ./wrt/dl/${{env.XRAY_SOURCE}}
 
       - name: Download Packages
         if: ${{ !inputs.WRT_TEST }}
@@ -209,6 +232,13 @@ jobs:
           cd ./wrt/
 
           make -j$(nproc) || make -j1 V=s
+
+      - name: Save Xray Download Cache
+        if: ${{ !inputs.WRT_TEST && env.XRAY_SOURCE != '' && steps.xray-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@main
+        with:
+          key: xray-download-v1-${{env.XRAY_SOURCE}}
+          path: ./wrt/dl/${{env.XRAY_SOURCE}}
 
       - name: Save Build Cache
         if: ${{ !inputs.WRT_TEST && success() && steps.cache-restore.outputs.cache-hit != 'true' }}
