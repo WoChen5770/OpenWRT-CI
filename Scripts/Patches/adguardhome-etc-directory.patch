@@ -1,0 +1,75 @@
+--- a/files/luci/controller/adguardhome.lua
++++ b/files/luci/controller/adguardhome.lua
+@@ -5,6 +5,7 @@
+ local http = require "luci.http"
+ 
+ local BIN_PATHS = {
++    "/etc/AdGuardHome/AdGuardHome",
+     "/opt/AdGuardHome/AdGuardHome",
+     "/usr/bin/AdGuardHome",
+     "/usr/local/bin/AdGuardHome"
+@@ -16,6 +17,7 @@
+ }
+ 
+ local CONFIG_PATHS = {
++    "/etc/AdGuardHome/AdGuardHome.yaml",
+     "/opt/AdGuardHome/AdGuardHome.yaml",
+     "/etc/AdGuardHome.yaml",
+     "/etc/adguardhome/adguardhome.yaml"
+@@ -393,6 +395,11 @@
+ 
+ function launch_core_upgrade(force)
+     local bin_path = find_binary()
++    -- New installations use /etc. Do not silently migrate a running legacy instance.
++    local install_parent = "/etc"
++    if bin_path == "/opt/AdGuardHome/AdGuardHome" then
++        install_parent = "/opt"
++    end
+     local ts = os.date("%Y%m%d_%H%M%S") or ("t" .. os.time())
+     local backup_dir = "/root/agh_backup_core_" .. ts
+     local candidates_str = table.concat(PROXY_LIST, " ")
+@@ -414,6 +421,7 @@
+     add("INIT_SCRIPTS='" .. init_scripts_str .. "'")
+     add("BIN_PATHS='" .. bin_paths_str .. "'")
+     add("INSTALL_BASE='" .. install_base .. "'")
++    add("INSTALL_PARENT='" .. install_parent .. "'")
+     add("")
+     add("cleanup() { rm -f /tmp/agh_install_${TS}.sh 2>/dev/null; }")
+     add("trap 'cleanup' EXIT INT TERM")
+@@ -579,7 +587,7 @@
+     add("  if fetch_installer \"$TMP_INST\"; then")
+     add("    svc stop >> \"$LOG\" 2>&1 || pkill -f AdGuardHome 2>/dev/null")
+     add("    sleep 2")
+-    add("    sh \"$TMP_INST\" -r >> \"$LOG\" 2>&1")
++    add("    sh \"$TMP_INST\" -o \"$INSTALL_PARENT\" -r >> \"$LOG\" 2>&1")
+     add("    UPGRADE_RC=$?")
+     add("    if [ \"$UPGRADE_RC\" != \"0\" ]; then")
+     add("      echo '   [fallback] install.sh -r failed (rc='\"$UPGRADE_RC\"'); trying proxy-aware package download + overwrite' >> \"$LOG\"")
+@@ -600,7 +608,7 @@
+     add("else")
+     add("  echo '   mode: install script (no existing binary)' >> \"$LOG\"")
+     add("  if fetch_installer \"$TMP_INST\"; then")
+-    add("    sh \"$TMP_INST\" >> \"$LOG\" 2>&1")
++    add("    sh \"$TMP_INST\" -o \"$INSTALL_PARENT\" >> \"$LOG\" 2>&1")
+     add("    UPGRADE_RC=$?")
+     add("    if [ \"$UPGRADE_RC\" != \"0\" ]; then")
+     add("      echo '   [fallback] install.sh failed (rc='\"$UPGRADE_RC\"'); trying proxy-aware package download' >> \"$LOG\"")
+@@ -747,6 +755,7 @@
+     -- 2. 系统/运行日志：优先 AdGuardHome 原生日志（截尾 100 行），否则从系统 logread 提取 / 2. System/runtime log: prefer AGH native log (last 100 lines), else system logread
+     local run_log = ""
+     local agh_logs = {
++        "/etc/AdGuardHome/data/agh.log",
+         "/opt/AdGuardHome/data/agh.log",
+         "/var/log/AdGuardHome.log",
+         "/tmp/AdGuardHome.log"
+--- a/files/view/dashboard.js
++++ b/files/view/dashboard.js
+@@ -622,7 +622,7 @@
+                     E('tr', { class: 'tr' }, [
+                         E('td', { class: 'td', style: 'width:32%;font-weight:bold' }, T('核心部署')),
+                         E('td', { class: 'td' }, isBinInstalled
+-                            ? E('span', { style: 'color:#2dca73;font-weight:bold' }, T('✔ 已下载') + ' (' + (status.bin_path || '/opt/AdGuardHome/AdGuardHome') + ')')
++                            ? E('span', { style: 'color:#2dca73;font-weight:bold' }, T('✔ 已下载') + ' (' + (status.bin_path || '/etc/AdGuardHome/AdGuardHome') + ')')
+                             : E('span', {}, [
+                                 E('span', { style: 'color:#e74c3c;font-weight:bold' }, T('✖ 未安装')),
+                                 '  ',

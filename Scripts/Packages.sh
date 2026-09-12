@@ -68,6 +68,32 @@ UPDATE_PACKAGE_GROUP() {
 	rm -rf "./$REPO_NAME"
 }
 
+#提取仓库内的单个软件包；临时克隆避免仓库名与包目录同名时相互覆盖。
+UPDATE_NESTED_PACKAGE() (
+	local PKG_NAME=$1
+	local PKG_REPO=$2
+	local PKG_BRANCH=$3
+	local PKG_ALIAS=${4:-}
+	local TMP_DIR
+	TMP_DIR=$(mktemp -d) || exit 1
+	trap 'rm -rf "$TMP_DIR"' EXIT
+
+	git clone --depth=1 --single-branch --branch "$PKG_BRANCH" \
+		"https://github.com/$PKG_REPO.git" "$TMP_DIR/source" || exit 1
+	if [ ! -f "$TMP_DIR/source/$PKG_NAME/Makefile" ]; then
+		echo "Package Makefile not found: $PKG_REPO/$PKG_NAME" >&2
+		exit 1
+	fi
+
+	# 完整获取新源码后，才移除旧目录和 feeds 安装链接，防止重复定义。
+	for NAME in "$PKG_NAME" "$PKG_ALIAS"; do
+		[ -n "$NAME" ] || continue
+		find ./ ../feeds/luci/ ../feeds/packages/ -maxdepth 3 \
+			\( -type d -o -type l \) -name "$NAME" -prune -exec rm -rf {} + || exit 1
+	done
+	cp -R "$TMP_DIR/source/$PKG_NAME" "./$PKG_NAME" || exit 1
+)
+
 # 调用示例
 # UPDATE_PACKAGE "OpenAppFilter" "destan19/OpenAppFilter" "master" "" "custom_name1 custom_name2"
 # UPDATE_PACKAGE "open-app-filter" "destan19/OpenAppFilter" "master" "" "luci-app-appfilter oaf" 这样会把原有的open-app-filter，luci-app-appfilter，oaf相关组件删除，不会出现coremark错误。
@@ -94,6 +120,9 @@ UPDATE_PACKAGE "easytier" "EasyTier/luci-app-easytier" "main"
 UPDATE_PACKAGE "luci-app-adguardhome-dashboard" "imonior/luci-app-adguardhome-dashboard" "main"
 cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/luci-app-adguardhome-dashboard.mk" \
 	./luci-app-adguardhome-dashboard/Makefile
+#新安装默认部署到 /etc/AdGuardHome；上游结构变化导致补丁失败时停止构建。
+patch --batch --forward -d ./luci-app-adguardhome-dashboard -p1 \
+	< "$GITHUB_WORKSPACE/Scripts/Patches/adguardhome-etc-directory.patch" || exit 1
 UPDATE_PACKAGE_GROUP "kenzok8/small" "master" "dae" "daed" "luci-app-daede" "v2ray-geodata"
 UPDATE_PACKAGE "mosdns" "sbwml/luci-app-mosdns" "v5" "" "v2dat"
 UPDATE_PACKAGE "netspeedtest" "sirpdboy/netspeedtest" "main" "" "homebox ookla-speedtest"
@@ -104,11 +133,18 @@ UPDATE_PACKAGE "qmodem" "FUjr/QModem" "main"
 UPDATE_PACKAGE "quickfile" "sbwml/luci-app-quickfile" "main"
 UPDATE_PACKAGE "timecontrol" "sirpdboy/luci-app-timecontrol" "main"
 UPDATE_PACKAGE "viking" "VIKINGYFY/packages" "main" "" "axonhub gecoosac sing-box luci-app-homeproxy luci-app-timewol luci-app-wolplus luci-app-wolultra"
+#Bandix 前后端均采用上游 main 分支的包定义，保留下载哈希校验。
+UPDATE_NESTED_PACKAGE "openwrt-bandix" "timsaya/openwrt-bandix" "main" "bandix" || exit 1
+UPDATE_NESTED_PACKAGE "luci-app-bandix" "timsaya/luci-app-bandix" "main" || exit 1
+
 UPDATE_PACKAGE "vnt" "lmq8267/luci-app-vnt" "main"
 
 UPDATE_PACKAGE "airpi3000m" "LianXia233/luci-app-airpi3000m-fancontrol" "main"
 UPDATE_PACKAGE "h5000m" "LianXia233/luci-app-h5000m-netmode" "main"
 UPDATE_PACKAGE "qmodem-generic" "LianXia233/luci-app-qmodem-generic" "main"
+
+#最后替换 x86-64 的 Xray 定义，避免其他软件源覆盖；其他架构保持原样。
+bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1
 
 #更新软件包版本
 UPDATE_VERSION() {

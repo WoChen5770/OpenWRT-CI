@@ -184,6 +184,16 @@ jobs:
 
           make defconfig -j$(nproc)
 
+          # 防止缺失的包符号被 defconfig 静默移除，生成不含 fq 的固件。
+          if [[ "$WRT_CONFIG" == "X86" ]]; then
+            for PACKAGE in kmod-tcp-bbr kmod-sched tc-full xray-core; do
+              if ! grep -qx "CONFIG_PACKAGE_${PACKAGE}=y" .config; then
+                echo "::error::Required x86 network package missing after defconfig: $PACKAGE"
+                exit 1
+              fi
+            done
+          fi
+
           make clean -j$(nproc)
 
       - name: Download Packages

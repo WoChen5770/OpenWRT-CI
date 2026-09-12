@@ -40,11 +40,13 @@ cp -f -r "$GITHUB_WORKSPACE/Scripts/uci-defaults/." \
 echo "CONFIG_PACKAGE_luci=y" >> ./.config
 echo "CONFIG_LUCI_LANG_zh_Hans=y" >> ./.config
 
-#默认集成主题，WRT_THEME 仅控制默认启用哪个主题
+#默认集成 Bootstrap 和 shadcn；其余主题保留源码，可手动选择编译
 echo "CONFIG_PACKAGE_luci-theme-bootstrap=y" >> ./.config
-echo "CONFIG_PACKAGE_luci-theme-noobwrt=y" >> ./.config
 echo "CONFIG_PACKAGE_luci-theme-shadcn=y" >> ./.config
-echo "CONFIG_PACKAGE_luci-theme-fluent=y" >> ./.config
+echo "CONFIG_PACKAGE_luci-theme-aurora=n" >> ./.config
+echo "CONFIG_PACKAGE_luci-app-aurora-config=n" >> ./.config
+echo "CONFIG_PACKAGE_luci-theme-fluent=n" >> ./.config
+echo "CONFIG_PACKAGE_luci-theme-noobwrt=n" >> ./.config
 
 #引入私有扩展配置
 if [ -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" ]; then
