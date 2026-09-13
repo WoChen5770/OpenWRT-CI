@@ -198,13 +198,18 @@ jobs:
 
             # 防止上游依赖把已裁剪的包重新选中；私有/手动配置允许主动覆盖默认裁剪。
             if [[ ! -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" && -z "$WRT_PACKAGE" ]]; then
+              CONFIG_ERRORS=0
               while IFS='=' read -r OPTION VALUE; do
                 [[ "$OPTION" == CONFIG_PACKAGE_* && "$VALUE" == n ]] || continue
-                if grep -Eq "^${OPTION}=[ym]$" .config; then
-                  echo "::error::Disabled x86 package selected after defconfig: $OPTION"
-                  exit 1
+                if SELECTED=$(grep -E "^${OPTION}=[ym]$" .config); then
+                  echo "::error::Disabled x86 package selected after defconfig: $SELECTED"
+                  CONFIG_ERRORS=1
                 fi
               done < "$GITHUB_WORKSPACE/Config/X86.txt"
+              # 一次列出所有重新选中的包及 y/m 状态，避免只暴露第一个问题。
+              if [[ "$CONFIG_ERRORS" != 0 ]]; then
+                exit 1
+              fi
             fi
           fi
 

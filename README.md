@@ -54,7 +54,7 @@ GitHub Actions 默认仅编译 X86 系列固件，不集成 WiFi 驱动。
 
 ## X86 虚拟机默认裁剪
 
-`Config/X86.txt` 面向飞牛 / Virtio 虚拟机，在 `GENERAL.txt` 之后加载：
+`Config/X86.txt` 面向飞牛 / Virtio 虚拟机，在 `GENERAL.txt` 之后加载，并关闭 `TARGET_PER_DEVICE_ROOTFS`，避免设备 profile 通过 `MODULE_DEFAULT_*` 强制选回已裁剪的软件包：
 
 - 不默认集成 USB 网卡、蜂窝网卡、手机 USB 共享网络、音频、USB 存储，以及 Btrfs / exFAT / NTFS / 内核 SMB / FUSE、自动挂载和额外磁盘维护工具。
 - 保留 Virtio、直通 PCIe 网卡驱动、AHCI / NVMe、基础 USB / HID 控制台支持，以及启动、`/overlay` 和升级所需的 EXT4 / F2FS / VFAT、基础磁盘工具。

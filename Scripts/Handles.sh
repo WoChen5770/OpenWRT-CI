@@ -4,6 +4,17 @@
 
 PKG_PATH="$GITHUB_WORKSPACE/wrt/package"
 
+#Nikki 的两个 Mihomo 变体双向 CONFLICTS 会生成 Kconfig 循环依赖。
+#仅在已知双向声明存在时，保留 meta -> alpha 的单向互斥；源码和两个变体均保留。
+MIHOMO_ALPHA_FILE="$PKG_PATH/OpenWrt-nikki/mihomo-alpha/Makefile"
+MIHOMO_META_FILE="$PKG_PATH/OpenWrt-nikki/mihomo-meta/Makefile"
+if [ -f "$MIHOMO_ALPHA_FILE" ] && [ -f "$MIHOMO_META_FILE" ] &&
+	grep -Eq '^[[:space:]]*CONFLICTS[[:space:]]*:?=[[:space:]]*mihomo-meta[[:space:]]*$' "$MIHOMO_ALPHA_FILE" &&
+	grep -Eq '^[[:space:]]*CONFLICTS[[:space:]]*:?=[[:space:]]*mihomo-alpha[[:space:]]*$' "$MIHOMO_META_FILE"; then
+	sed -i -E '/^[[:space:]]*CONFLICTS[[:space:]]*:?=[[:space:]]*mihomo-meta[[:space:]]*$/d' "$MIHOMO_ALPHA_FILE" || exit 1
+	echo "Mihomo variant conflicts fixed (meta -> alpha)!"
+fi
+
 #预置HomeProxy数据，隔离临时变量和清理信号，避免影响后续修复
 hp_preset_resources() (
 	local HP_DIR="$1"

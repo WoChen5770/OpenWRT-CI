@@ -3,6 +3,9 @@ CONFIG_TARGET_x86=y
 CONFIG_TARGET_x86_64=y
 #设备列表
 CONFIG_TARGET_ALL_PROFILES=y
+#X86 使用统一根文件系统，允许完整禁用设备 profile 自带的包。
+#否则 MODULE_DEFAULT_* 会强制把 USB 网卡、automount 等重新选为 m。
+CONFIG_TARGET_PER_DEVICE_ROOTFS=n
 #不集成WIFI驱动
 #daed后端所需内核能力
 CONFIG_KERNEL_DEBUG_INFO=y
