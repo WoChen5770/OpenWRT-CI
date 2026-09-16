@@ -1,0 +1,3 @@
+#!/bin/sh
+# Nonzero exit keeps this uci-defaults migration available for retry.
+/usr/libexec/adguardhome-dashboard-enable-autostart --once

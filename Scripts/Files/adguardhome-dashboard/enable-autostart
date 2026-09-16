@@ -1,0 +1,24 @@
+#!/bin/sh
+# Enable only on explicit installation or a one-time firmware migration.
+# Do not start/restart the service or touch its DNS configuration.
+marker=/etc/adguardhome-dashboard.autostart-v1
+if [ "$1" = "--once" ] && [ -f "$marker" ]; then
+	exit 0
+fi
+
+for service in /etc/init.d/AdGuardHome /etc/init.d/adguardhome; do
+	[ -x "$service" ] || continue
+	if ! "$service" enabled; then
+		"$service" enable || exit 1
+	fi
+	"$service" enabled || exit 1
+	# Preserve the migration marker across upgrades, including if the user
+	# subsequently disables autostart intentionally.
+	touch "$marker" || exit 1
+	exit 0
+done
+
+# Fresh firmware may contain only the dashboard, not the downloaded core.
+[ "$1" = "--once" ] && exit 0
+echo 'AdGuard Home init script not found; autostart was not enabled' >&2
+exit 1

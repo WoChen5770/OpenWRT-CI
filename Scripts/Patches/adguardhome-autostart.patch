@@ -1,0 +1,56 @@
+--- a/files/luci/controller/adguardhome.lua
++++ b/files/luci/controller/adguardhome.lua
+@@ -305,7 +305,7 @@
+ 
+     if action == "install_service" then
+         if bin_path then
+-            cmd = bin_path .. " -s install"
++            cmd = bin_path .. " -s install && /usr/libexec/adguardhome-dashboard-enable-autostart"
+         else
+             http.prepare_content("application/json")
+             http.write_json({ success = false, error = "binary not found" })
+@@ -326,10 +326,11 @@
+     local time_str = os.date("%Y-%m-%d %H:%M:%S")
+     -- 单次同步动作重置清空日志文件（>），并将运行标准输出重定向回日志 / Single sync action truncates the log file (>) and redirects stdout back into the log
+     util.exec("echo '[" .. time_str .. "] Executing action: " .. action .. "' > " .. EXEC_LOG)
+-    local result = util.exec(cmd .. " 2>&1 | tee -a " .. EXEC_LOG)
+-    
++    local rc = util.call("(" .. cmd .. ") >> " .. EXEC_LOG .. " 2>&1")
++    local result = fs.readfile(EXEC_LOG) or ""
++
+     http.prepare_content("application/json")
+-    http.write_json({ success = true, output = result })
++    http.write_json({ success = rc == 0, output = result })
+ end
+ 
+ -- 从 AGH 的 CHANGELOG.md（raw.githubusercontent.com 上的同一 host，与面板版本检查一致）
+@@ -422,6 +423,8 @@
+     add("BIN_PATHS='" .. bin_paths_str .. "'")
+     add("INSTALL_BASE='" .. install_base .. "'")
+     add("INSTALL_PARENT='" .. install_parent .. "'")
++    add("HAD_INIT=0")
++    add("for s_i in $INIT_SCRIPTS; do [ -x \"$s_i\" ] && HAD_INIT=1; done")
+     add("")
+     add("cleanup() { rm -f /tmp/agh_install_${TS}.sh 2>/dev/null; }")
+     add("trap 'cleanup' EXIT INT TERM")
+@@ -673,6 +676,20 @@
+     add("  exit 2")
+     add("fi")
+     add("")
++    add("if [ \"$HAD_INIT\" = 0 ]; then")
++    add("  HAS_INIT=0")
++    add("  for s_i in $INIT_SCRIPTS; do [ -x \"$s_i\" ] && HAS_INIT=1; done")
++    add("  if [ \"$HAS_INIT\" = 0 ]; then")
++    add("    if ! \"$NEW_BIN\" -s install >> \"$LOG\" 2>&1; then")
++    add("      echo '=== core upgrade FAILED: service installation ===' >> \"$LOG\"")
++    add("      exit 3")
++    add("    fi")
++    add("  fi")
++    add("  if ! /usr/libexec/adguardhome-dashboard-enable-autostart >> \"$LOG\" 2>&1; then")
++    add("    echo '=== core upgrade FAILED: autostart not enabled ===' >> \"$LOG\"")
++    add("    exit 3")
++    add("  fi")
++    add("fi")
+     add("echo '>> Phase 5: restart service' >> \"$LOG\"")
+     add("svc restart >> \"$LOG\" 2>&1 || { svc stop >> \"$LOG\" 2>&1; sleep 1; svc start >> \"$LOG\" 2>&1; }")
+     add("echo \"=== core upgrade done (v${OLD_VERSION:-none} -> v${NEW_VERSION:-?}) ===\" >> \"$LOG\"")

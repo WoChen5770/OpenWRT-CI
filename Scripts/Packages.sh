@@ -123,6 +123,11 @@ cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/luci-app-adguardhome-dashboard.mk" \
 #新安装默认部署到 /etc/AdGuardHome；上游结构变化导致补丁失败时停止构建。
 patch --batch --forward -d ./luci-app-adguardhome-dashboard -p1 \
 	< "$GITHUB_WORKSPACE/Scripts/Patches/adguardhome-etc-directory.patch" || exit 1
+# 开机自启迁移及后续面板安装流程使用同一检查脚本。
+cp -f "$GITHUB_WORKSPACE/Scripts/Files/adguardhome-dashboard/"* \
+	./luci-app-adguardhome-dashboard/files/ || exit 1
+patch --batch --forward -d ./luci-app-adguardhome-dashboard -p1 \
+	< "$GITHUB_WORKSPACE/Scripts/Patches/adguardhome-autostart.patch" || exit 1
 UPDATE_PACKAGE_GROUP "kenzok8/small" "master" "dae" "daed" "luci-app-daede" "v2ray-geodata"
 UPDATE_PACKAGE "mosdns" "sbwml/luci-app-mosdns" "v5" "" "v2dat"
 UPDATE_PACKAGE "netspeedtest" "sirpdboy/netspeedtest" "main" "" "homebox ookla-speedtest"
