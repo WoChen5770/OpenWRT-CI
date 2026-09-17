@@ -134,7 +134,8 @@ UPDATE_PACKAGE "netspeedtest" "sirpdboy/netspeedtest" "main" "" "homebox ookla-s
 UPDATE_PACKAGE "netwizard" "sirpdboy/luci-app-netwizard" "main"
 UPDATE_PACKAGE "openlist2" "sbwml/luci-app-openlist2" "main"
 UPDATE_PACKAGE "qbittorrent" "sbwml/luci-app-qbittorrent" "master" "" "qt6base qt6tools rblibtorrent"
-UPDATE_PACKAGE "qmodem" "FUjr/QModem" "main"
+# 完全禁用 QModem，保留拉取代码供以后按需恢复。
+# UPDATE_PACKAGE "qmodem" "FUjr/QModem" "main"
 UPDATE_PACKAGE "quickfile" "sbwml/luci-app-quickfile" "main"
 UPDATE_PACKAGE "timecontrol" "sirpdboy/luci-app-timecontrol" "main"
 UPDATE_PACKAGE "viking" "VIKINGYFY/packages" "main" "" "axonhub gecoosac sing-box luci-app-homeproxy luci-app-timewol luci-app-wolplus luci-app-wolultra"
@@ -146,7 +147,17 @@ UPDATE_PACKAGE "vnt" "lmq8267/luci-app-vnt" "main"
 
 UPDATE_PACKAGE "airpi3000m" "LianXia233/luci-app-airpi3000m-fancontrol" "main"
 UPDATE_PACKAGE "h5000m" "LianXia233/luci-app-h5000m-netmode" "main"
-UPDATE_PACKAGE "qmodem-generic" "LianXia233/luci-app-qmodem-generic" "main"
+# UPDATE_PACKAGE "qmodem-generic" "LianXia233/luci-app-qmodem-generic" "main"
+
+# 完全移除源码或 feeds 残留的 QModem 包及安装链接。
+# 必须在所有软件源更新后、生成包元数据前执行；仅设为 n 无法消除 Kconfig 环。
+for PACKAGE_ROOT in . ../feeds; do
+	[ -d "$PACKAGE_ROOT" ] || continue
+	find "$PACKAGE_ROOT" \( -type d -o -type l \) \( \
+		-iname 'qmodem*' -o -iname 'luci-app-qmodem*' -o \
+		-iname 'luci-i18n-qmodem*' \) -prune \
+		-exec rm -rf -- {} + || exit 1
+done
 
 #最后替换 x86-64 的 Xray 定义，避免其他软件源覆盖；其他架构保持原样。
 bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1
