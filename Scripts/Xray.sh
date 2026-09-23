@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run from the OpenWrt package directory. Other targets keep their original recipe.
+# Run from the OpenWrt source root (./wrt). Other targets keep their original recipe.
 set -euo pipefail
 
 if [[ "${WRT_TARGET:-}" != "x86" || "${WRT_SUBTARGET:-}" != "64" ]]; then
@@ -7,8 +7,8 @@ if [[ "${WRT_TARGET:-}" != "x86" || "${WRT_SUBTARGET:-}" != "64" ]]; then
 fi
 
 TEMPLATE="$GITHUB_WORKSPACE/Scripts/Makefiles/xray-core-prebuilt.mk"
-[[ -f "$TEMPLATE" && -d ../feeds/packages && -d ../feeds/luci ]] || {
-	echo "Xray: missing template or not running from the OpenWrt package directory" >&2
+[[ -f "$TEMPLATE" && -d ./feeds/packages && -d ./feeds/luci ]] || {
+	echo "Xray: missing template or not running from the OpenWrt source root" >&2
 	exit 1
 }
 
@@ -56,9 +56,10 @@ sed -e "s/@XRAY_VERSION@/$VERSION/g" -e "s/@XRAY_TAG@/$TAG/g" \
 	-e "s/@XRAY_ASSET_ID@/$ASSET_ID/g" "$TEMPLATE" > "$TMP_DIR/xray-core/Makefile"
 
 # Remove exact-name recipes and feed symlinks, not xray-plugin or other packages.
-find ./ ../feeds/packages/ ../feeds/luci/ -maxdepth 3 \
+find ./package ./feeds/packages/ ./feeds/luci/ -maxdepth 3 \
 	\( -type d -o -type l \) -name xray-core -prune -exec rm -rf {} +
-cp -R "$TMP_DIR/xray-core" ./xray-core
+mkdir -p ./package
+cp -R "$TMP_DIR/xray-core" ./package/xray-core
 
 # Cache only the ZIP, never the release lookup. A re-upload gets a new asset ID.
 if [[ -n "${GITHUB_ENV:-}" ]]; then

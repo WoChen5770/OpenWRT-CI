@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 VIKINGYFY
 
-PKG_PATH="$GITHUB_WORKSPACE/wrt/package"
+FEEDS_PATH="./feeds"
+PACKAGE_PATH="./package"
 
 #Nikki 的两个 Mihomo 变体双向 CONFLICTS 会生成 Kconfig 循环依赖。
 #仅在已知双向声明存在时，保留 meta -> alpha 的单向互斥；源码和两个变体均保留。
-MIHOMO_ALPHA_FILE="$PKG_PATH/OpenWrt-nikki/mihomo-alpha/Makefile"
-MIHOMO_META_FILE="$PKG_PATH/OpenWrt-nikki/mihomo-meta/Makefile"
+MIHOMO_ALPHA_FILE="$PACKAGE_PATH/OpenWrt-nikki/mihomo-alpha/Makefile"
+MIHOMO_META_FILE="$PACKAGE_PATH/OpenWrt-nikki/mihomo-meta/Makefile"
 if [ -f "$MIHOMO_ALPHA_FILE" ] && [ -f "$MIHOMO_META_FILE" ] &&
 	grep -Eq '^[[:space:]]*CONFLICTS[[:space:]]*:?=[[:space:]]*mihomo-meta[[:space:]]*$' "$MIHOMO_ALPHA_FILE" &&
 	grep -Eq '^[[:space:]]*CONFLICTS[[:space:]]*:?=[[:space:]]*mihomo-alpha[[:space:]]*$' "$MIHOMO_META_FILE"; then
@@ -171,7 +172,7 @@ hp_preset_resources() (
 	return "$update_failed"
 )
 
-HP_DIR="$(find "$PKG_PATH" -maxdepth 3 -type d -iname '*homeproxy*' -print -quit 2>/dev/null)"
+HP_DIR="$(find "$PACKAGE_PATH" -maxdepth 3 -type d -iname '*homeproxy*' -print -quit 2>/dev/null)"
 if [ -n "$HP_DIR" ]; then
 	echo " "
 	if hp_preset_resources "$HP_DIR"; then
@@ -182,10 +183,10 @@ if [ -n "$HP_DIR" ]; then
 fi
 
 #修改argon主题字体和颜色
-if [ -d "$PKG_PATH/luci-theme-argon" ]; then
+if [ -d "$PACKAGE_PATH/luci-theme-argon" ]; then
 	echo " "
-	if sed -i "s/primary '.*'/primary '#31a1a1'/; s/'0.2'/'0.5'/; s/'none'/'bing'/; s/'600'/'normal'/" \
-		"$PKG_PATH/luci-theme-argon/luci-app-argon-config/root/etc/config/argon"; then
+	if sed -i "s/primary '.*'/primary '#31a1a1'/g; s/'0.2'/'0.5'/g; s/'none'/'bing'/g; s/'600'/'normal'/g" \
+		"$PACKAGE_PATH/luci-theme-argon/luci-app-argon-config/root/etc/config/argon"; then
 		echo "theme-argon has been fixed!"
 	else
 		echo "theme-argon fix failed; continuing!"
@@ -193,9 +194,9 @@ if [ -d "$PKG_PATH/luci-theme-argon" ]; then
 fi
 
 #修改aurora菜单式样
-if [ -d "$PKG_PATH/luci-app-aurora-config" ]; then
+if [ -d "$PACKAGE_PATH/luci-app-aurora-config" ]; then
 	echo " "
-	if find "$PKG_PATH/luci-app-aurora-config/root/usr/share/aurora/" -type f -name '*.template' -exec \
+	if find "$PACKAGE_PATH/luci-app-aurora-config/root/usr/share/aurora/" -type f -name '*.template' -exec \
 		sed -i "s/nav_type '.*'/nav_type 'dropdown'/g; s/struct_radius_base '.*'/struct_radius_base '0.125rem'/g" {} +; then
 		echo "theme-aurora has been fixed!"
 	else
@@ -204,18 +205,29 @@ if [ -d "$PKG_PATH/luci-app-aurora-config" ]; then
 fi
 
 #修改mini-diskmanager菜单位置
-if [ -d "$PKG_PATH/luci-app-mini-diskmanager" ]; then
+if [ -d "$PACKAGE_PATH/luci-app-mini-diskmanager" ]; then
 	echo " "
 	if sed -i "s/services/system/g" \
-		"$PKG_PATH/luci-app-mini-diskmanager/luci-app-mini-diskmanager/root/usr/share/luci/menu.d/luci-app-mini-diskmanager.json"; then
+		"$PACKAGE_PATH/luci-app-mini-diskmanager/luci-app-mini-diskmanager/root/usr/share/luci/menu.d/luci-app-mini-diskmanager.json"; then
 		echo "mini-diskmanager has been fixed!"
 	else
 		echo "mini-diskmanager fix failed; continuing!"
 	fi
 fi
 
+#修改natmapt菜单位置
+if [ -d "$PACKAGE_PATH/luci-app-natmapt" ]; then
+	echo " "
+	if sed -i "s/network/services/g" \
+		"$PACKAGE_PATH/luci-app-natmapt/root/usr/share/luci/menu.d/luci-app-natmap.json"; then
+		echo "natmapt has been fixed!"
+	else
+		echo "natmapt fix failed; continuing!"
+	fi
+fi
+
 #修复TailScale配置文件冲突
-FEEDS_PACKAGES="$PKG_PATH/../feeds/packages"
+FEEDS_PACKAGES="$FEEDS_PATH/packages"
 TS_FILE="$(find "$FEEDS_PACKAGES" -maxdepth 3 -type f -wholename '*/tailscale/Makefile' -print -quit 2>/dev/null)"
 if [ -f "$TS_FILE" ]; then
 	echo " "
