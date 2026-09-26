@@ -6,6 +6,15 @@ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_tenda_be12-pro=y
 CONFIG_PACKAGE_kmod-cryptodev=y
 CONFIG_PACKAGE_kmod-tls=y
 
+# daed 使用内核自带 BTF，避免依赖未生成的 vmlinux-btf 软件包。
+CONFIG_KERNEL_DEBUG_INFO=y
+CONFIG_KERNEL_DEBUG_INFO_REDUCED=n
+CONFIG_KERNEL_DEBUG_INFO_BTF=y
+CONFIG_KERNEL_BPF_EVENTS=y
+CONFIG_KERNEL_XDP_SOCKETS=y
+CONFIG_DAED_USE_KERNEL_BTF=y
+CONFIG_BPF_TOOLCHAIN_HOST=y
+
 # 与 X86 相同的第三方插件来自 GENERAL；以下保持 X86 的 PassWall 后端预置。
 #PassWall 不默认集成这些后端；必须同时关闭 INCLUDE 选项，避免依赖重新选中。
 #源码仍保留，PRIVATE.txt / WRT_PACKAGE 可按需重新启用。

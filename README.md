@@ -52,7 +52,7 @@ GitHub Actions 默认仅编译 X86 系列固件，不集成 WiFi 驱动。
 
 ## Tenda BE12 Pro 手动编译
 
-在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支和 `Config/TENDA-BE12-PRO.txt`，仅选择 `tenda_be12-pro` 设备。第三方插件沿用 X86 的 `GENERAL.txt` 预置，并同步其 PassWall/Xray 后端选择；硬件驱动不照搬 X86 裁剪。首次验证可勾选 `TEST`，只生成配置，不编译固件；正式编译保持 `TEST` 关闭。构建完成后在 Releases 下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
+在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支和 `Config/TENDA-BE12-PRO.txt`，仅选择 `tenda_be12-pro` 设备。第三方插件沿用 X86 的 `GENERAL.txt` 预置，并同步其 PassWall/Xray 后端选择；硬件驱动不照搬 X86 裁剪；`daed` 所需的内核 BTF 则与 X86 保持一致。首次验证可勾选 `TEST`，只生成配置，不编译固件；正式编译保持 `TEST` 关闭。构建完成后在 Releases 下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
 
 默认管理地址：192.168.123.1。
 

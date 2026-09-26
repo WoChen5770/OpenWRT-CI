@@ -187,6 +187,16 @@ jobs:
 
           make defconfig -j$(nproc)
 
+          # daed 必须使用内核集成 BTF；否则 APK 会在固件安装时找不到 vmlinux-btf。
+          if [[ "$WRT_CONFIG" == "TENDA-BE12-PRO" ]]; then
+            for OPTION in KERNEL_DEBUG_INFO_BTF KERNEL_XDP_SOCKETS DAED_USE_KERNEL_BTF BPF_TOOLCHAIN_HOST PACKAGE_luci-app-daede_daed; do
+              if ! grep -qx "CONFIG_${OPTION}=y" .config; then
+                echo "::error::BE12 Pro daed kernel BTF requirement missing after defconfig: $OPTION"
+                exit 1
+              fi
+            done
+          fi
+
           # 防止缺失的包符号被 defconfig 静默移除，生成不含 fq 的固件。
           if [[ "$WRT_CONFIG" == "X86" ]]; then
             for PACKAGE in kmod-tcp-bbr kmod-sched tc-full xray-core; do
