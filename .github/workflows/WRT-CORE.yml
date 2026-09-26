@@ -99,6 +99,10 @@ jobs:
           WRT_CACHE_BRANCH=${WRT_BRANCH//\//-}
           WRT_CACHE_TARGET="$WRT_TARGET-$WRT_SUBTARGET"
           WRT_CACHE_PREFIX="wrt-$WRT_CACHE_SOURCE-$WRT_CACHE_BRANCH-$WRT_CACHE_TARGET"
+          # 两种 BE12 Pro 配置不可共用相同的缓存键，避免并发写入冲突。
+          if [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
+            WRT_CACHE_PREFIX="$WRT_CACHE_PREFIX-$WRT_CONFIG"
+          fi
 
           {
             echo "WRT_INFO=${WRT_SOURCE%%/*}"
@@ -176,8 +180,13 @@ jobs:
 
           if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
             cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
+          elif [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
+            # 共用设备配置，再由具体版本关闭另一套大体积软件包。
+            cat "$GITHUB_WORKSPACE/Config/GENERAL.txt" \
+              "$GITHUB_WORKSPACE/Config/TENDA-BE12-PRO.txt" \
+              "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
           elif [[ "$WRT_CONFIG" == "X86" || "$WRT_CONFIG" == "TENDA-BE12-PRO" ]]; then
-            # X86 的虚拟机裁剪及 BE12 Pro 的 PassWall 预置均需覆盖通用配置。
+            # X86 裁剪及旧 BE12 Pro 配置均需覆盖通用配置。
             cat "$GITHUB_WORKSPACE/Config/GENERAL.txt" "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
           else
             cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" "$GITHUB_WORKSPACE/Config/GENERAL.txt" >> .config
@@ -187,8 +196,36 @@ jobs:
 
           make defconfig -j$(nproc)
 
+          # 两版固件的互斥选包必须在 defconfig 后仍然成立。
+          case "$WRT_CONFIG" in
+            TENDA-BE12-PRO-PASSWALL)
+              for PACKAGE in luci-app-passwall xray-core; do
+                grep -qx "CONFIG_PACKAGE_${PACKAGE}=y" .config || {
+                  echo "::error::BE12 Pro PassWall package missing: $PACKAGE"; exit 1;
+                }
+              done
+              for PACKAGE in luci-app-daede luci-app-daede_daed daed; do
+                if grep -Eq "^CONFIG_PACKAGE_${PACKAGE}=[ym]$" .config; then
+                  echo "::error::BE12 Pro PassWall image unexpectedly includes $PACKAGE"; exit 1;
+                fi
+              done
+              ;;
+            TENDA-BE12-PRO-DAED)
+              for PACKAGE in luci-app-daede luci-app-daede_daed; do
+                grep -qx "CONFIG_PACKAGE_${PACKAGE}=y" .config || {
+                  echo "::error::BE12 Pro daed package missing: $PACKAGE"; exit 1;
+                }
+              done
+              for PACKAGE in luci-app-passwall xray-core; do
+                if grep -Eq "^CONFIG_PACKAGE_${PACKAGE}=[ym]$" .config; then
+                  echo "::error::BE12 Pro daed image unexpectedly includes $PACKAGE"; exit 1;
+                fi
+              done
+              ;;
+          esac
+
           # daed 必须使用内核集成 BTF；否则 APK 会在固件安装时找不到 vmlinux-btf。
-          if [[ "$WRT_CONFIG" == "TENDA-BE12-PRO" ]]; then
+          if [[ "$WRT_CONFIG" == "TENDA-BE12-PRO-DAED" ]]; then
             for OPTION in KERNEL_DEBUG_INFO_BTF KERNEL_XDP_SOCKETS DAED_USE_KERNEL_BTF BPF_TOOLCHAIN_HOST PACKAGE_luci-app-daede_daed; do
               if ! grep -qx "CONFIG_${OPTION}=y" .config; then
                 echo "::error::BE12 Pro daed kernel BTF requirement missing after defconfig: $OPTION"

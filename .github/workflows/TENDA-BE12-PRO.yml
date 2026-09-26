@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Tenda BE12 Pro 单设备固件编译（手动触发）
+# Tenda BE12 Pro 两种独立固件（手动触发）
 name: TENDA-BE12-PRO
 
 on:
@@ -19,10 +19,14 @@ permissions: write-all
 
 jobs:
   config:
-    name: TENDA-BE12-PRO
+    name: ${{matrix.CONFIG}}
+    strategy:
+      fail-fast: false
+      matrix:
+        CONFIG: [TENDA-BE12-PRO-PASSWALL, TENDA-BE12-PRO-DAED]
     uses: ./.github/workflows/WRT-CORE.yml
     with:
-      WRT_CONFIG: TENDA-BE12-PRO
+      WRT_CONFIG: ${{matrix.CONFIG}}
       WRT_THEME: bootstrap
       WRT_NAME: OWRT
       WRT_SSID: OWRT

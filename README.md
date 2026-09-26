@@ -52,9 +52,16 @@ GitHub Actions 默认仅编译 X86 系列固件，不集成 WiFi 驱动。
 
 X86 与 Tenda BE12 Pro 均预置 EasyTier 核心和 LuCI，但不预置 `easytier-web`。
 
-## Tenda BE12 Pro 手动编译
+## Tenda BE12 Pro 双版本手动编译
 
-在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支和 `Config/TENDA-BE12-PRO.txt`，仅选择 `tenda_be12-pro` 设备。第三方插件沿用 X86 的 `GENERAL.txt` 预置，并同步其 PassWall/Xray 后端选择；硬件驱动不照搬 X86 裁剪；`daed` 所需的内核 BTF 则与 X86 保持一致。首次验证可勾选 `TEST`，只生成配置，不编译固件；正式编译保持 `TEST` 关闭。构建完成后在 Releases 下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
+在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**，一次分别构建两版，仅选择 `tenda_be12-pro` 设备：
+
+- `TENDA-BE12-PRO-PASSWALL`：保留 PassWall + Xray，不预置 daed/LuCI daed。
+- `TENDA-BE12-PRO-DAED`：保留 daed/LuCI daed（含内核 BTF），不预置 PassWall + Xray。
+
+两版共用 `Config/TENDA-BE12-PRO.txt` 中的设备、Wi-Fi 和通用插件配置，并都不预置 `easytier-web`；不照搬 X86 的虚拟机驱动裁剪。编译默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支。可勾选 `TEST` 先只生成配置；正式编译保持 `TEST` 关闭。构建完成后按 Releases 中的版本名下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
+
+PassWall 版与 X86 一样在每次构建时查询 Xray 官方最新发布，并打包官方 ARM64 程序；若最新发布尚无 ARM64 文件，则构建失败而不回退旧版。daed 版不预置 Xray。新版 Xray 可能更大，分包不保证固定的剩余空间。
 
 默认管理地址：192.168.123.1。
 

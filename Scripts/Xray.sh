@@ -1,10 +1,20 @@
 #!/bin/bash
-# Run from the OpenWrt source root (./wrt). Other targets keep their original recipe.
+# Run from the OpenWrt source root (./wrt). Only selected PassWall targets use official binaries.
 set -euo pipefail
 
-if [[ "${WRT_TARGET:-}" != "x86" || "${WRT_SUBTARGET:-}" != "64" ]]; then
-	exit 0
-fi
+case "${WRT_TARGET:-}/${WRT_SUBTARGET:-}/${WRT_CONFIG:-}" in
+	x86/64/*)
+		ASSET="Xray-linux-64.zip"
+		ARCH_DEPENDS="@x86_64"
+		ARCH_LABEL="x86-64"
+		;;
+	mediatek/filogic/TENDA-BE12-PRO-PASSWALL)
+		ASSET="Xray-linux-arm64-v8a.zip"
+		ARCH_DEPENDS="@aarch64"
+		ARCH_LABEL="ARM64"
+		;;
+	*) exit 0 ;;
+esac
 
 TEMPLATE="$GITHUB_WORKSPACE/Scripts/Makefiles/xray-core-prebuilt.mk"
 [[ -f "$TEMPLATE" && -d ./feeds/packages && -d ./feeds/luci ]] || {
@@ -27,18 +37,18 @@ for ATTEMPT in 1 2 3; do
 		--connect-timeout 15 --max-time 120 "${HEADERS[@]}" \
 		'https://api.github.com/repos/XTLS/Xray-core/releases?per_page=100' \
 		> "$TMP_DIR/releases.json"
-	if RELEASE=$(jq -er '
+	if RELEASE=$(jq -er --arg asset "$ASSET" '
 		map(select(.draft != true and .published_at != null))
 		| max_by(.published_at)
 		| select(.tag_name | strings | length > 0) as $release
 		| first(($release.assets // [])[] | select(
-			.name == "Xray-linux-64.zip" and .state == "uploaded" and (.id | type) == "number"))
+			.name == $asset and .state == "uploaded" and (.id | type) == "number"))
 		| [$release.tag_name, .id] | @tsv
 	' "$TMP_DIR/releases.json"); then
 		break
 	fi
 	if [[ "$ATTEMPT" == 3 ]]; then
-		echo "Xray: latest release or its x86-64 ZIP is unavailable; refusing an older version" >&2
+		echo "Xray: latest release or its $ASSET is unavailable; refusing an older version" >&2
 		exit 1
 	fi
 	echo "Xray: latest release ZIP is not ready; retrying in 10 seconds ($ATTEMPT/3)" >&2
@@ -51,9 +61,12 @@ VERSION=${TAG#v}
 case "$VERSION" in
 	''|*[!a-zA-Z0-9._+-]*) echo "Xray: unusable release tag: $TAG" >&2; exit 1 ;;
 esac
-SOURCE="Xray-linux-64-$VERSION-$ASSET_ID.zip"
+SOURCE="${ASSET%.zip}-$VERSION-$ASSET_ID.zip"
 sed -e "s/@XRAY_VERSION@/$VERSION/g" -e "s/@XRAY_TAG@/$TAG/g" \
-	-e "s/@XRAY_ASSET_ID@/$ASSET_ID/g" "$TEMPLATE" > "$TMP_DIR/xray-core/Makefile"
+	-e "s/@XRAY_SOURCE@/$SOURCE/g" -e "s/@XRAY_ASSET@/$ASSET/g" \
+	-e "s/@XRAY_ARCH_DEPENDS@/$ARCH_DEPENDS/g" \
+	-e "s/@XRAY_ARCH_LABEL@/$ARCH_LABEL/g" \
+	"$TEMPLATE" > "$TMP_DIR/xray-core/Makefile"
 
 # Remove exact-name recipes and feed symlinks, not xray-plugin or other packages.
 find ./package ./feeds/packages/ ./feeds/luci/ -maxdepth 3 \
@@ -65,4 +78,4 @@ cp -R "$TMP_DIR/xray-core" ./package/xray-core
 if [[ -n "${GITHUB_ENV:-}" ]]; then
 	printf 'XRAY_SOURCE=%s\n' "$SOURCE" >> "$GITHUB_ENV"
 fi
-echo "Xray x86-64: using latest official release $TAG (SHA256 check disabled)"
+echo "Xray $ARCH_LABEL: using latest official release $TAG (SHA256 check disabled)"

@@ -5,9 +5,9 @@ PKG_VERSION:=@XRAY_VERSION@
 PKG_RELEASE:=1
 
 # Resolved for each build, including prereleases. Asset ID avoids stale re-upload caches.
-PKG_SOURCE:=Xray-linux-64-$(PKG_VERSION)-@XRAY_ASSET_ID@.zip
+PKG_SOURCE:=@XRAY_SOURCE@
 PKG_SOURCE_URL:=https://github.com/XTLS/Xray-core/releases/download/@XRAY_TAG@
-PKG_SOURCE_URL_FILE:=Xray-linux-64.zip
+PKG_SOURCE_URL_FILE:=@XRAY_ASSET@
 PKG_HASH:=skip
 
 PKG_LICENSE:=MPL-2.0
@@ -18,13 +18,13 @@ include $(INCLUDE_DIR)/package.mk
 define Package/xray-core
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Xray core (official x86-64 binary)
+  TITLE:=Xray core (official @XRAY_ARCH_LABEL@ binary)
   URL:=https://github.com/XTLS/Xray-core
-  DEPENDS:=@x86_64 +ca-bundle
+  DEPENDS:=@XRAY_ARCH_DEPENDS@ +ca-bundle
 endef
 
 define Package/xray-core/description
- Official XTLS x86-64 release, packaged at /usr/bin/xray for PassWall.
+ Official XTLS @XRAY_ARCH_LABEL@ release, packaged at /usr/bin/xray for PassWall.
  Geodata remains managed by the existing OpenWrt/PassWall packages.
 endef
 
