@@ -204,7 +204,9 @@ jobs:
                   echo "::error::BE12 Pro PassWall package missing: $PACKAGE"; exit 1;
                 }
               done
-              for PACKAGE in luci-app-daede luci-app-daede_daed daed; do
+              # luci-app-daede_daed 是独立的 Kconfig choice 选项；主包关闭时
+              # 它仍可能显示为 y，但不会因此安装 daed。只核对实际软件包。
+              for PACKAGE in luci-app-daede daed; do
                 if grep -Eq "^CONFIG_PACKAGE_${PACKAGE}=[ym]$" .config; then
                   echo "::error::BE12 Pro PassWall image unexpectedly includes $PACKAGE"; exit 1;
                 fi

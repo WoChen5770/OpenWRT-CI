@@ -5,6 +5,15 @@ name: TENDA-BE12-PRO
 on:
   workflow_dispatch:
     inputs:
+      PROFILE:
+        description: '编译版本；默认同时编译两版。'
+        default: BOTH
+        required: true
+        type: choice
+        options:
+          - BOTH
+          - PASSWALL
+          - DAED
       PACKAGE:
         description: '手动调整插件包，多个请用\n符号隔开。'
         required: false
@@ -23,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        CONFIG: [TENDA-BE12-PRO-PASSWALL, TENDA-BE12-PRO-DAED]
+        CONFIG: ${{fromJSON(inputs.PROFILE == 'PASSWALL' && '["TENDA-BE12-PRO-PASSWALL"]' || inputs.PROFILE == 'DAED' && '["TENDA-BE12-PRO-DAED"]' || '["TENDA-BE12-PRO-PASSWALL","TENDA-BE12-PRO-DAED"]')}}
     uses: ./.github/workflows/WRT-CORE.yml
     with:
       WRT_CONFIG: ${{matrix.CONFIG}}

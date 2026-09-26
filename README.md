@@ -54,7 +54,7 @@ X86 与 Tenda BE12 Pro 均预置 EasyTier 核心和 LuCI，但不预置 `easytie
 
 ## Tenda BE12 Pro 双版本手动编译
 
-在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**，一次分别构建两版，仅选择 `tenda_be12-pro` 设备：
+在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；`PROFILE=BOTH` 一次分别构建两版，或选 `PASSWALL` / `DAED` 只构建指定版本，仅选择 `tenda_be12-pro` 设备：
 
 - `TENDA-BE12-PRO-PASSWALL`：保留 PassWall + Xray，不预置 daed/LuCI daed。
 - `TENDA-BE12-PRO-DAED`：保留 daed/LuCI daed（含内核 BTF），不预置 PassWall + Xray。
