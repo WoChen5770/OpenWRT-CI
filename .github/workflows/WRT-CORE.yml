@@ -176,9 +176,9 @@ jobs:
 
           if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
             cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
-          elif [[ "$WRT_CONFIG" == "X86" ]]; then
-            # X86 的虚拟机裁剪覆盖通用配置；其他平台仍沿用原来的加载顺序。
-            cat "$GITHUB_WORKSPACE/Config/GENERAL.txt" "$GITHUB_WORKSPACE/Config/X86.txt" >> .config
+          elif [[ "$WRT_CONFIG" == "X86" || "$WRT_CONFIG" == "TENDA-BE12-PRO" ]]; then
+            # X86 的虚拟机裁剪及 BE12 Pro 的 PassWall 预置均需覆盖通用配置。
+            cat "$GITHUB_WORKSPACE/Config/GENERAL.txt" "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
           else
             cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" "$GITHUB_WORKSPACE/Config/GENERAL.txt" >> .config
           fi
