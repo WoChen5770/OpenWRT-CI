@@ -109,7 +109,7 @@ ACTUAL=$(sha256sum "$WORK/archive" | awk '{print $1}')
 [ "$ACTUAL" = "$EXPECTED" ] || { echo 'Release SHA256 mismatch; nothing changed' >&2; exit 1; }
 case "$1" in
     xray) unzip -p "$WORK/archive" xray > "$WORK/unpacked" ;;
-    adguardhome) tar -xzOf "$WORK/archive" AdGuardHome/AdGuardHome > "$WORK/unpacked" ;;
+    adguardhome) tar -xzOf "$WORK/archive" ./AdGuardHome/AdGuardHome > "$WORK/unpacked" ;;
 esac
 [ -s "$WORK/unpacked" ] || { echo 'Empty binary in release archive' >&2; exit 1; }
 chmod 755 "$WORK/unpacked"

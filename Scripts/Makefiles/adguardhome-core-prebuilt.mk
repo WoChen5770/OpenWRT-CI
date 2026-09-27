@@ -21,7 +21,7 @@ endef
 
 define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	tar -xzf $(DL_DIR)/$(PKG_SOURCE) -C $(PKG_BUILD_DIR) AdGuardHome/AdGuardHome
+	tar -xzf $(DL_DIR)/$(PKG_SOURCE) -C $(PKG_BUILD_DIR) ./AdGuardHome/AdGuardHome
 	upx --best $(PKG_BUILD_DIR)/AdGuardHome/AdGuardHome
 	upx -t $(PKG_BUILD_DIR)/AdGuardHome/AdGuardHome
 endef
