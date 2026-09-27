@@ -178,6 +178,7 @@ done
 
 #最后替换 x86-64 的 Xray 定义，避免其他软件源覆盖；其他架构保持原样。
 bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1
+bash "$GITHUB_WORKSPACE/Scripts/AdGuardHome.sh" || exit 1
 
 #更新软件包版本
 UPDATE_VERSION() {

@@ -18,11 +18,6 @@ on:
         description: '手动调整插件包，多个请用\n符号隔开。'
         required: false
         type: string
-      TEST:
-        description: '仅输出配置文件，不编译固件。'
-        default: false
-        required: false
-        type: boolean
 
 permissions: write-all
 
@@ -46,4 +41,3 @@ jobs:
       WRT_BRANCH: owrt
       WRT_SOURCE: VIKINGYFY/immortalwrt
       WRT_PACKAGE: ${{inputs.PACKAGE}}
-      WRT_TEST: ${{inputs.TEST || false}}

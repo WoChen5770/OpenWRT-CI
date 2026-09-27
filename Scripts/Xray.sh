@@ -67,6 +67,16 @@ sed -e "s/@XRAY_VERSION@/$VERSION/g" -e "s/@XRAY_TAG@/$TAG/g" \
 	-e "s/@XRAY_ARCH_DEPENDS@/$ARCH_DEPENDS/g" \
 	-e "s/@XRAY_ARCH_LABEL@/$ARCH_LABEL/g" \
 	"$TEMPLATE" > "$TMP_DIR/xray-core/Makefile"
+if [[ "$WRT_CONFIG" == TENDA-BE12-PRO-PASSWALL ]]; then
+	awk '$0 == "@XRAY_COMPRESS@" {
+		print "\tupx --best $(PKG_BUILD_DIR)/xray"
+		print "\tupx -t $(PKG_BUILD_DIR)/xray"
+		next
+	} {print}' "$TMP_DIR/xray-core/Makefile" > "$TMP_DIR/Makefile"
+	mv "$TMP_DIR/Makefile" "$TMP_DIR/xray-core/Makefile"
+else
+	sed -i '/@XRAY_COMPRESS@/d' "$TMP_DIR/xray-core/Makefile"
+fi
 
 # Remove exact-name recipes and feed symlinks, not xray-plugin or other packages.
 find ./package ./feeds/packages/ ./feeds/luci/ -maxdepth 3 \

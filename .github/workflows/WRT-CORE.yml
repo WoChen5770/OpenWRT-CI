@@ -40,10 +40,6 @@ on:
       WRT_PACKAGE:
         required: false
         type: string
-      WRT_TEST:
-        required: false
-        default: false
-        type: boolean
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -58,7 +54,6 @@ env:
   WRT_BRANCH: ${{inputs.WRT_BRANCH}}
   WRT_SOURCE: ${{inputs.WRT_SOURCE}}
   WRT_PACKAGE: ${{inputs.WRT_PACKAGE}}
-  WRT_TEST: ${{inputs.WRT_TEST}}
 
 jobs:
   core:
@@ -140,7 +135,6 @@ jobs:
 
       - name: Restore Build Cache
         id: cache-restore
-        if: ${{ !inputs.WRT_TEST }}
         uses: actions/cache/restore@main
         with:
           key: ${{env.WRT_CACHE_KEY}}
@@ -151,7 +145,7 @@ jobs:
             ./wrt/staging_dir/tool*
 
       - name: Prepare Restored Build Cache
-        if: ${{ !inputs.WRT_TEST && steps.cache-restore.outputs.cache-matched-key != '' }}
+        if: ${{ steps.cache-restore.outputs.cache-matched-key != '' }}
         run: |
           find "./wrt/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r DIR; do
             find "$DIR" -type f -exec touch {} +
@@ -178,9 +172,7 @@ jobs:
         run: |
           cd ./wrt/
 
-          if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
-            cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
-          elif [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
+          if [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
             # 共用设备配置，再由具体版本关闭另一套大体积软件包。
             cat "$GITHUB_WORKSPACE/Config/GENERAL.txt" \
               "$GITHUB_WORKSPACE/Config/TENDA-BE12-PRO.txt" \
@@ -226,9 +218,9 @@ jobs:
               ;;
           esac
 
-          # 两个 BE12 Pro 版本都必须自带手动更新器与 ARM64 UPX。
+          # 两版均预置已 UPX 压缩的 AdGuard Home 核心、手动更新器与 ARM64 UPX。
           if [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
-            for PACKAGE in upx-arm64-static owrt-core-update; do
+            for PACKAGE in adguardhome-core-prebuilt upx-arm64-static owrt-core-update; do
               grep -qx "CONFIG_PACKAGE_${PACKAGE}=y" .config || {
                 echo "::error::BE12 Pro manual updater package missing: $PACKAGE"; exit 1;
               }
@@ -273,38 +265,40 @@ jobs:
 
           make clean -j$(nproc)
 
+      - name: Install Host UPX for BE12 Pro Core Compression
+        if: ${{ startsWith(inputs.WRT_CONFIG, 'TENDA-BE12-PRO-') }}
+        run: bash "$GITHUB_WORKSPACE/Scripts/HostUPX.sh"
+
       # 每次先查询最新版本；缓存只复用同一版本、同一附件的 ZIP，不回退旧版本。
       - name: Restore Xray Download Cache
         id: xray-cache-restore
-        if: ${{ !inputs.WRT_TEST && env.XRAY_SOURCE != '' }}
+        if: ${{ env.XRAY_SOURCE != '' }}
         uses: actions/cache/restore@main
         with:
           key: xray-download-v1-${{env.XRAY_SOURCE}}
           path: ./wrt/dl/${{env.XRAY_SOURCE}}
 
       - name: Download Packages
-        if: ${{ !inputs.WRT_TEST }}
         run: |
           cd ./wrt/
 
           make download -j$(nproc)
 
       - name: Compile Firmware
-        if: ${{ !inputs.WRT_TEST }}
         run: |
           cd ./wrt/
 
           make -j$(nproc) || make -j1 V=s
 
       - name: Save Xray Download Cache
-        if: ${{ !inputs.WRT_TEST && env.XRAY_SOURCE != '' && steps.xray-cache-restore.outputs.cache-hit != 'true' }}
+        if: ${{ env.XRAY_SOURCE != '' && steps.xray-cache-restore.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@main
         with:
           key: xray-download-v1-${{env.XRAY_SOURCE}}
           path: ./wrt/dl/${{env.XRAY_SOURCE}}
 
       - name: Save Build Cache
-        if: ${{ !inputs.WRT_TEST && success() && steps.cache-restore.outputs.cache-hit != 'true' }}
+        if: ${{ success() && steps.cache-restore.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@main
         with:
           key: ${{env.WRT_CACHE_KEY}}
@@ -331,23 +325,21 @@ jobs:
 
           cp -f ./.config ./upload/Config-"$WRT_CONFIG"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_DATE".txt
 
-          if [[ "$WRT_TEST" != 'true' ]]; then
-            echo "WRT_KVER=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^kernel - \K[\d\.]+' {} \;)" >> $GITHUB_ENV
-            echo "WRT_LIST=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^luci-(app|theme)[^ ]*' {} \; | tr '\n' ' ')" >> $GITHUB_ENV
+          echo "WRT_KVER=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^kernel - \K[\d\.]+' {} \;)" >> $GITHUB_ENV
+          echo "WRT_LIST=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^luci-(app|theme)[^ ]*' {} \; | tr '\n' ' ')" >> $GITHUB_ENV
 
-            find ./bin/targets/ -iregex ".*\(buildinfo\|json\|sha256sums\|packages\)$" -exec rm -rf {} +
+          find ./bin/targets/ -iregex ".*\(buildinfo\|json\|sha256sums\|packages\)$" -exec rm -rf {} +
 
-            for FILE in $(find ./bin/targets/ -type f -iname "*$WRT_TARGET*") ; do
-              EXT=$(basename $FILE | cut -d '.' -f 2-)
-              NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io "\($WRT_TARGET\).*")
-              NEW_FILE="$NAME"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_DATE"."$EXT"
-              mv -f $FILE ./upload/$NEW_FILE
-            done
+          for FILE in $(find ./bin/targets/ -type f -iname "*$WRT_TARGET*") ; do
+            EXT=$(basename $FILE | cut -d '.' -f 2-)
+            NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io "\($WRT_TARGET\).*")
+            NEW_FILE="$NAME"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_DATE"."$EXT"
+            mv -f $FILE ./upload/$NEW_FILE
+          done
 
-            find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
+          find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
 
-            make clean -j$(nproc)
-          fi
+          make clean -j$(nproc)
 
       - name: Release Firmware
         uses: softprops/action-gh-release@master
@@ -378,7 +370,7 @@ jobs:
   cache-rollover:
     name: Roll cache generations
     needs: core
-    if: ${{ !inputs.WRT_TEST && needs.core.result == 'success' }}
+    if: ${{ needs.core.result == 'success' }}
     runs-on: ubuntu-latest
     concurrency:
       group: wrt-cache-rollover-${{github.ref}}-${{needs.core.outputs.cache_prefix}}

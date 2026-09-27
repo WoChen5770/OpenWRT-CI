@@ -32,6 +32,7 @@ define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)
 	unzip -o $(DL_DIR)/$(PKG_SOURCE) xray LICENSE -d $(PKG_BUILD_DIR)
 	test -s $(PKG_BUILD_DIR)/xray
+@XRAY_COMPRESS@
 endef
 
 define Build/Configure
