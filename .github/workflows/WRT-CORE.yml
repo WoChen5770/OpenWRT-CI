@@ -226,6 +226,15 @@ jobs:
               ;;
           esac
 
+          # 两个 BE12 Pro 版本都必须自带手动更新器与 ARM64 UPX。
+          if [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
+            for PACKAGE in upx-arm64-static owrt-core-update; do
+              grep -qx "CONFIG_PACKAGE_${PACKAGE}=y" .config || {
+                echo "::error::BE12 Pro manual updater package missing: $PACKAGE"; exit 1;
+              }
+            done
+          fi
+
           # daed 必须使用内核集成 BTF；否则 APK 会在固件安装时找不到 vmlinux-btf。
           if [[ "$WRT_CONFIG" == "TENDA-BE12-PRO-DAED" ]]; then
             for OPTION in KERNEL_DEBUG_INFO_BTF KERNEL_XDP_SOCKETS DAED_USE_KERNEL_BTF BPF_TOOLCHAIN_HOST PACKAGE_luci-app-daede_daed; do

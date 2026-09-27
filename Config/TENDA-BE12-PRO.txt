@@ -34,3 +34,8 @@ CONFIG_PACKAGE_haproxy-nossl=n
 #PassWall 使用官方新版 Xray 核心；软件包仍由 APK 管理。
 CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray=y
 CONFIG_PACKAGE_xray-core=y
+
+# 手动更新已安装的 Xray / AdGuard Home：官方 SHA256、/tmp 压缩、校验后替换。
+# UPX 静态 ARM64 程序作为固件文件提供，不在空间紧张的 overlay 上安装。
+CONFIG_PACKAGE_upx-arm64-static=y
+CONFIG_PACKAGE_owrt-core-update=y

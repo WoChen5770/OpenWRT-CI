@@ -63,6 +63,21 @@ X86 与 Tenda BE12 Pro 均预置 EasyTier 核心和 LuCI，但不预置 `easytie
 
 PassWall 版与 X86 一样在每次构建时查询 Xray 官方最新发布，并打包官方 ARM64 程序；若最新发布尚无 ARM64 文件，则构建失败而不回退旧版。daed 版不预置 Xray。新版 Xray 可能更大，分包不保证固定的剩余空间。
 
+## BE12 Pro 手动更新核心
+
+新编译的 **PassWall 与 daed 两版**均预置 ARM64 静态 UPX 和 `owrt-core-update`；不会后台自动更新。SSH 登录后按需运行：
+
+```sh
+owrt-core-update adguardhome
+owrt-core-update xray
+```
+
+只有已安装对应核心时才允许更新：daed 版默认没有 Xray，执行 `xray` 子命令会明确报错。AdGuard Home 核心仍由其面板首次安装；更新器不会自动安装核心或修改配置、数据。
+
+脚本从官方 GitHub 发布获取 AdGuard Home 最新稳定版 / Xray 按发布时间最新发布（包括预发布版）的 ARM64 附件，验证发行资产的 SHA256，在 `/tmp` 解包并使用 UPX 压缩和测试。预留临时内存及 overlay 空间后，先在目标目录写入新文件、核对哈希与版本，再替换原核心。运行中的服务会尝试重启，失败时从 `/tmp` 的旧核心副本回滚。若空间或校验不足，直接拒绝替换；**不要重启失败时仍需使用 `/tmp` 备份的设备**。建议事先将重要配置和核心备份到电脑。UPX 运行检查不能代替实际的 DNS / 代理功能测试。
+
+此脚本**不接管 AdGuard Home 自带网页或 LuCI 面板的核心更新按钮**。BE12 Pro 的 flash 空间有限，请勿使用原有页面按钮下载未压缩的新核心；使用上面的手动命令。固件中的 UPX 约 0.6 MiB，但核心更新后写入 `/usr/bin/xray` 或 `/etc/AdGuardHome/AdGuardHome` 的部分仍占用 overlay。X86 固件目前不预置本更新器。
+
 默认管理地址：192.168.123.1。
 
 ## X86 虚拟机默认裁剪

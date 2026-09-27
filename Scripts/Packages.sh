@@ -227,3 +227,12 @@ UPDATE_VERSION() {
 if [ -f "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh" ]; then
 	source "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh"
 fi
+
+# BE12 Pro: small prebuilt ARM64 UPX and a manual, checked /tmp-first core updater.
+mkdir -p ./package/upx-arm64-static ./package/owrt-core-update/files
+cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/upx-arm64-static.mk" \
+    ./package/upx-arm64-static/Makefile || exit 1
+cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/owrt-core-update.mk" \
+    ./package/owrt-core-update/Makefile || exit 1
+cp -f "$GITHUB_WORKSPACE/Scripts/Files/core-update/owrt-core-update" \
+    ./package/owrt-core-update/files/owrt-core-update || exit 1
