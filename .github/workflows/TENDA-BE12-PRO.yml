@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: MIT
-# Tenda BE12 Pro 两种独立固件（手动触发）
+# Tenda BE12 Pro 两种独立固件（自动与手动触发）
 name: TENDA-BE12-PRO
 
 on:
+  # Match X86: build both variants after the daily Auto-Clean workflow finishes.
+  workflow_run:
+    workflows: ["Auto-Clean"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       PROFILE:

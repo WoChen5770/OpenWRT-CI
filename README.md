@@ -44,22 +44,22 @@ https://drive.wrt.moe/uboot/mediatek
 
 # 固件简要说明
 
-固件每天早上5点自动编译。
+X86 与 Tenda BE12 Pro 固件均在每日 Auto-Clean 工作流完成后自动编译（Auto-Clean 每天北京时间 05:21 触发，实际开编时间取决于其运行进度）。
 
 固件信息里的时间为编译开始的时间，方便核对上游源码提交时间。
 
-GitHub Actions 默认仅编译 X86 系列固件，不集成 WiFi 驱动。
+GitHub Actions 自动编译 X86 和 Tenda BE12 Pro 两版固件；X86 固件不集成 WiFi 驱动。
 
 X86 默认预置 EasyTier 核心和 LuCI；Tenda BE12 Pro 默认不预置 EasyTier。两者均不预置 `easytier-web`。
 
-## Tenda BE12 Pro 双版本手动编译
+## Tenda BE12 Pro 双版本自动与手动编译
 
-在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；`PROFILE=BOTH` 一次分别构建两版，或选 `PASSWALL` / `DAED` 只构建指定版本，仅选择 `tenda_be12-pro` 设备：
+每日 Auto-Clean 完成后会自动构建两版。手动编译时，在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；`PROFILE=BOTH` 一次分别构建两版，或选 `PASSWALL` / `DAED` 只构建指定版本。两版均仅选择 `tenda_be12-pro` 设备：
 
 - `TENDA-BE12-PRO-PASSWALL`：保留 PassWall + Xray，不预置 daed/LuCI daed。
 - `TENDA-BE12-PRO-DAED`：保留 daed/LuCI daed（含内核 BTF），不预置 PassWall + Xray。
 
-两版共用 `Config/TENDA-BE12-PRO.txt` 中的设备、Wi-Fi 和通用插件配置；默认都不集成 Bandix、EasyTier 和 AdGuard Home（包括面板与预置核心）。插件源码仍保留，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入手动开启。编译默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支。构建完成后按 Releases 中的版本名下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
+两版共用 `Config/TENDA-BE12-PRO.txt` 中的设备、Wi-Fi 和通用插件配置；默认都不集成 Bandix、EasyTier 和 AdGuard Home（包括面板与预置核心）。插件源码仍保留，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入手动开启。编译默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支。构建完成后按 Releases 中的版本名下载对应固件，刷机前核对设备型号和镜像类型。自动触发时不传入 `PACKAGE`，使用默认选包。
 
 BE12 Pro 没有 USB，专用配置覆盖 `GENERAL.txt` 中的 USB 驱动、自动挂载、PC 磁盘/音频驱动和磁盘维护工具；保留 NAND/UBI 维护工具。PassWall 版仅使用 Xray 时不预置 Shadowsocks 专用的 `v2ray-plugin`；若节点依赖 Shadowsocks + v2ray-plugin，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入重新选入，并检查 `make defconfig` 后的实际配置。上述选包裁剪本身不清除已写入 overlay 的规则或自行安装的软件；AdGuard Home 数据目录的迁移行为见下文。
 
