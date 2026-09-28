@@ -1,107 +1,29 @@
-# 高质量<免费>交流群
-
-[IPQ技术讨论群](https://qm.qq.com/q/v7nMhzB4oU)
-
-# 高质量<付费>中转站
-
-[LiBwrt-Ai](https://api.zipimg.cn/register?aff=LR7FSZ2ZZ4D3)
-
-# 本地编译器
-
-https://github.com/VIKINGYFY/OWRT-Tools.git
-
-# 自用修改版插件
-
-https://github.com/VIKINGYFY/packages.git
-
 # OpenWRT-CI
 
-官方版：
+基于 [ImmortalWrt](https://github.com/VIKINGYFY/immortalwrt) 的自用固件编译配置。默认管理地址：`192.168.123.1`。
 
-https://github.com/immortalwrt/immortalwrt.git
+## 编译
 
-自用版：
+每日 `Auto-Clean` 完成后自动编译 X86 和 Tenda BE12 Pro；也可在 Actions 中手动运行相应工作流。BE12 Pro 手动运行时可选择 `BOTH`、`PASSWALL` 或 `DAED`。
 
-https://github.com/VIKINGYFY/immortalwrt.git
+| 固件 | 默认内容 |
+| --- | --- |
+| X86 | 虚拟机适配；PassWall + Xray、EasyTier 等，不集成 WiFi 驱动 |
+| BE12 Pro PassWall 版 | PassWall + Xray，不集成 daed |
+| BE12 Pro daed 版 | daed，不集成 PassWall + Xray |
 
-# U-BOOT
+BE12 Pro 两版默认都不集成 Bandix、EasyTier 和 AdGuard Home；可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入自行选用。
 
-高通版-沉心：
+## BE12 Pro 可选功能
 
-https://github.com/chenxin527/uboot-qsdk12.5-build.git
+- 预置 AdGuard Home：同时选用 `CONFIG_PACKAGE_luci-app-adguardhome-dashboard=y` 和 `CONFIG_PACKAGE_adguardhome-core-prebuilt=y`。选用后工作数据放在 `/tmp`，**重启会清空日志、统计和下载的过滤数据**。
+- PassWall 版预置手动核心更新命令 `owrt-core-update xray`；如额外预置 AdGuard Home，可运行 `owrt-core-update adguardhome`。更新核心前请备份配置并确认剩余空间。
+- daed 版默认不带更新器；如需使用，同时选用 `CONFIG_PACKAGE_owrt-core-update=y` 和 `CONFIG_PACKAGE_upx-arm64-static=y`。
 
-高通版-小猪：
+## 其他资源
 
-https://github.com/1980490718/u-boot-2016.git
+- [ImmortalWrt 官方版](https://github.com/immortalwrt/immortalwrt) · [自用版](https://github.com/VIKINGYFY/immortalwrt) · [本地编译工具](https://github.com/VIKINGYFY/OWRT-Tools) · [自用插件](https://github.com/VIKINGYFY/packages)
+- U-Boot：[高通-沉心](https://github.com/chenxin527/uboot-qsdk12.5-build) · [高通-小猪](https://github.com/1980490718/u-boot-2016) · [联发科-新版](https://github.com/VIKINGYFY/UBOOT-CI/releases) · [联发科-官方版](https://drive.wrt.moe/uboot/mediatek)
+- [IPQ 技术讨论群](https://qm.qq.com/q/v7nMhzB4oU) · [LiBwrt-Ai](https://api.zipimg.cn/register?aff=LR7FSZ2ZZ4D3)
 
-联发科-全新版：
-
-https://github.com/VIKINGYFY/UBOOT-CI/releases
-
-联发科-官方版：
-
-https://drive.wrt.moe/uboot/mediatek
-
-# 固件简要说明
-
-X86 与 Tenda BE12 Pro 固件均在每日 Auto-Clean 工作流完成后自动编译（Auto-Clean 每天北京时间 05:21 触发，实际开编时间取决于其运行进度）。
-
-固件信息里的时间为编译开始的时间，方便核对上游源码提交时间。
-
-GitHub Actions 自动编译 X86 和 Tenda BE12 Pro 两版固件；X86 固件不集成 WiFi 驱动。
-
-X86 默认预置 EasyTier 核心和 LuCI；Tenda BE12 Pro 默认不预置 EasyTier。两者均不预置 `easytier-web`。
-
-## Tenda BE12 Pro 双版本自动与手动编译
-
-每日 Auto-Clean 完成后会自动构建两版。手动编译时，在 Actions 中选择 `TENDA-BE12-PRO`，点击 **Run workflow**；`PROFILE=BOTH` 一次分别构建两版，或选 `PASSWALL` / `DAED` 只构建指定版本。两版均仅选择 `tenda_be12-pro` 设备：
-
-- `TENDA-BE12-PRO-PASSWALL`：保留 PassWall + Xray，不预置 daed/LuCI daed。
-- `TENDA-BE12-PRO-DAED`：保留 daed/LuCI daed（含内核 BTF），不预置 PassWall + Xray。
-
-两版共用 `Config/TENDA-BE12-PRO.txt` 中的设备、Wi-Fi 和通用插件配置；默认都不集成 Bandix、EasyTier 和 AdGuard Home（包括面板与预置核心）。插件源码仍保留，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入手动开启。编译默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支。构建完成后按 Releases 中的版本名下载对应固件，刷机前核对设备型号和镜像类型。自动触发时不传入 `PACKAGE`，使用默认选包。
-
-BE12 Pro 没有 USB，专用配置覆盖 `GENERAL.txt` 中的 USB 驱动、自动挂载、PC 磁盘/音频驱动和磁盘维护工具；保留 NAND/UBI 维护工具。PassWall 版仅使用 Xray 时不预置 Shadowsocks 专用的 `v2ray-plugin`；若节点依赖 Shadowsocks + v2ray-plugin，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入重新选入，并检查 `make defconfig` 后的实际配置。上述选包裁剪本身不清除已写入 overlay 的规则或自行安装的软件；AdGuard Home 数据目录的迁移行为见下文。
-
-PassWall 版与 X86 一样在每次构建时查询 Xray 官方最新发布；BE12 Pro 的 ARM64 Xray 在编译机上用 UPX 压缩后预置到 `/usr/bin/xray`。若最新发布尚无 ARM64 文件，则构建失败而不回退旧版。daed 版不预置 Xray。AdGuard Home 默认不查询发布版本、不下载也不预置核心；若需要，请同时选中 `CONFIG_PACKAGE_luci-app-adguardhome-dashboard=y` 和 `CONFIG_PACKAGE_adguardhome-core-prebuilt=y`。选择预置核心后构建时才查询官方稳定版，并在编译机上用 UPX 压缩后放入 `/etc/AdGuardHome/AdGuardHome`。单独选入面板时不会自动预置核心。
-
-## BE12 Pro 手动更新核心
-
-PassWall 版为了 Xray 默认预置 ARM64 静态 UPX 和 `owrt-core-update`；daed 版默认不预置这两项。手动选入 AdGuard Home 核心的 daed 版如需命令行更新，可再选择 `CONFIG_PACKAGE_owrt-core-update=y` 和 `CONFIG_PACKAGE_upx-arm64-static=y`。已安装更新器的固件可在 SSH 登录后按需运行：
-
-```sh
-owrt-core-update adguardhome
-owrt-core-update xray
-```
-
-只有已安装对应核心时才允许更新：默认的 daed 版没有 Xray，两版均没有 AdGuard Home；执行对应子命令会明确报错。更新器不会修改配置或数据。
-
-脚本从官方 GitHub 发布获取 AdGuard Home 最新稳定版 / Xray 按发布时间最新发布（包括预发布版）的 ARM64 附件，验证发行资产的 SHA256，在 `/tmp` 解包并使用 UPX 压缩和测试。预留临时内存及 overlay 空间后，先在目标目录写入新文件、核对哈希与版本，再替换原核心。运行中的服务会尝试重启，失败时从 `/tmp` 的旧核心副本回滚。若空间或校验不足，直接拒绝替换；**不要重启失败时仍需使用 `/tmp` 备份的设备**。建议事先将重要配置和核心备份到电脑。UPX 运行检查不能代替实际的 DNS / 代理功能测试。
-
-仅在 BE12 Pro 选中 AdGuard Home 面板或预置核心时才加入 `S05agh-ram-data`：开机时创建 `/tmp/AdGuardHome/data` 并将 `/etc/AdGuardHome/data` 指向该目录，早于 AdGuard Home 的 S50/S95 启动。首次刷入后如果保留了旧的持久化 `data`，脚本会将其删除；查询日志、统计、会话及下载的过滤数据此后均在重启时清空。核心和 `AdGuardHome.yaml` 仍在 `/etc/AdGuardHome`，升级前如需保留历史数据请自行备份。日志可能占满内存盘，仍建议限制保留时长。
-
-此脚本**不接管 AdGuard Home 自带网页或 LuCI 面板的核心更新按钮**。BE12 Pro 的 flash 空间有限，请勿使用原有页面按钮下载未压缩的新核心；使用上面的手动命令。选入设备端 UPX 时约占 0.6 MiB，但核心更新后写入 `/usr/bin/xray` 或 `/etc/AdGuardHome/AdGuardHome` 的部分仍占用 overlay。X86 固件目前不预置本更新器。
-
-默认管理地址：192.168.123.1。
-
-## X86 虚拟机默认裁剪
-
-`Config/X86.txt` 面向飞牛 / Virtio 虚拟机，在 `GENERAL.txt` 之后加载，并关闭 `TARGET_PER_DEVICE_ROOTFS`，避免设备 profile 通过 `MODULE_DEFAULT_*` 强制选回已裁剪的软件包：
-
-- 不默认集成 USB 网卡、蜂窝网卡、手机 USB 共享网络、音频、USB 存储，以及 Btrfs / exFAT / NTFS / 内核 SMB / FUSE、自动挂载和额外磁盘维护工具。
-- 保留 Virtio、直通 PCIe 网卡驱动、AHCI / NVMe、基础 USB / HID 控制台支持，以及启动、`/overlay` 和升级所需的 EXT4 / F2FS / VFAT、基础磁盘工具。
-- PassWall 保留 Xray，关闭 Shadowsocks-Rust、ShadowsocksR-Libev、Sing-box、HAProxy 的默认集成及对应 INCLUDE 选项；其他原有插件保持不变。
-- 仅改变 X86 默认选包，不删除软件源或软件包定义，不改变其他平台的默认配置。`Config/PRIVATE.txt` 和工作流的 `PACKAGE` 输入仍最后生效，可按需重新选包。
-
-按当前上游包定义，Bandix 和 EasyTier 使用预编译二进制，daed 使用 Go + eBPF；移除 Shadowsocks-Rust 后，默认 X86 选包不再需要它引入的 Rust host / LLVM 编译链。保留 BPF 所需的系统 Clang / LLVM，以及其他平台可能使用的 Rust 编译兼容处理；若手动加入新的 Rust 源码包，仍会需要 Rust 工具链。
-
-# 目录简要说明
-
-workflows——自定义CI配置
-
-Scripts——自定义脚本
-
-Config——自定义配置
-
-#
 [![Stargazers over time](https://starchart.cc/VIKINGYFY/OpenWRT-CI.svg?variant=adaptive)](https://starchart.cc/VIKINGYFY/OpenWRT-CI)
