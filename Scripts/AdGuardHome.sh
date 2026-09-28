@@ -2,6 +2,10 @@
 # Resolve the latest stable official ARM64 release for both BE12 Pro images.
 set -euo pipefail
 [[ "${WRT_CONFIG:-}" == TENDA-BE12-PRO-* ]] || exit 0
+# Repeated config values are resolved by the last explicit assignment.
+# Skip the release lookup when the prebuilt core is not requested.
+awk -F= '$1 == "CONFIG_PACKAGE_adguardhome-core-prebuilt" { selected = $2 }
+  END { exit selected == "y" ? 0 : 1 }' .config || exit 0
 
 TEMPLATE="$GITHUB_WORKSPACE/Scripts/Makefiles/adguardhome-core-prebuilt.mk"
 TMP=$(mktemp -d)

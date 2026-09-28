@@ -36,17 +36,6 @@ mkdir -p ./package/base-files/files/etc/uci-defaults
 cp -f -r "$GITHUB_WORKSPACE/Scripts/uci-defaults/." \
 	./package/base-files/files/etc/uci-defaults/
 
-# BE12 Pro: prepare volatile AdGuard Home data before its S50/S95 service starts.
-# Install the S05 link in the image itself so it also works on the first boot.
-if [[ "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
-	mkdir -p ./package/base-files/files/etc/{init.d,rc.d}
-	cp -f "$GITHUB_WORKSPACE/Scripts/Files/agh-ram-data" \
-		./package/base-files/files/etc/init.d/agh-ram-data
-	chmod +x ./package/base-files/files/etc/init.d/agh-ram-data
-	ln -sfn ../init.d/agh-ram-data \
-		./package/base-files/files/etc/rc.d/S05agh-ram-data
-fi
-
 #配置文件修改
 echo "CONFIG_PACKAGE_luci=y" >> ./.config
 echo "CONFIG_LUCI_LANG_zh_Hans=y" >> ./.config

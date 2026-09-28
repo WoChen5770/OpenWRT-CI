@@ -8,3 +8,7 @@ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_tenda_be12-pro=y
 CONFIG_PACKAGE_luci-app-daede=n
 CONFIG_PACKAGE_daed=n
 CONFIG_PACKAGE_dae=n
+
+# Retain the Xray manual updater in this variant only.
+CONFIG_PACKAGE_upx-arm64-static=y
+CONFIG_PACKAGE_owrt-core-update=y

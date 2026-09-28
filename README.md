@@ -50,7 +50,7 @@ https://drive.wrt.moe/uboot/mediatek
 
 GitHub Actions 默认仅编译 X86 系列固件，不集成 WiFi 驱动。
 
-X86 与 Tenda BE12 Pro 均预置 EasyTier 核心和 LuCI，但不预置 `easytier-web`。
+X86 默认预置 EasyTier 核心和 LuCI；Tenda BE12 Pro 默认不预置 EasyTier。两者均不预置 `easytier-web`。
 
 ## Tenda BE12 Pro 双版本手动编译
 
@@ -59,28 +59,28 @@ X86 与 Tenda BE12 Pro 均预置 EasyTier 核心和 LuCI，但不预置 `easytie
 - `TENDA-BE12-PRO-PASSWALL`：保留 PassWall + Xray，不预置 daed/LuCI daed。
 - `TENDA-BE12-PRO-DAED`：保留 daed/LuCI daed（含内核 BTF），不预置 PassWall + Xray。
 
-两版共用 `Config/TENDA-BE12-PRO.txt` 中的设备、Wi-Fi 和通用插件配置，并都不预置 `easytier-web`；不照搬 X86 的虚拟机驱动裁剪。编译默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支。构建完成后按 Releases 中的版本名下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
+两版共用 `Config/TENDA-BE12-PRO.txt` 中的设备、Wi-Fi 和通用插件配置；默认都不集成 Bandix、EasyTier 和 AdGuard Home（包括面板与预置核心）。插件源码仍保留，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入手动开启。编译默认使用 `VIKINGYFY/immortalwrt` 的 `owrt` 分支。构建完成后按 Releases 中的版本名下载对应固件，刷机前核对设备型号和镜像类型。此工作流不参与每日自动构建。
 
 BE12 Pro 没有 USB，专用配置覆盖 `GENERAL.txt` 中的 USB 驱动、自动挂载、PC 磁盘/音频驱动和磁盘维护工具；保留 NAND/UBI 维护工具。PassWall 版仅使用 Xray 时不预置 Shadowsocks 专用的 `v2ray-plugin`；若节点依赖 Shadowsocks + v2ray-plugin，可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入重新选入，并检查 `make defconfig` 后的实际配置。上述选包裁剪本身不清除已写入 overlay 的规则或自行安装的软件；AdGuard Home 数据目录的迁移行为见下文。
 
-PassWall 版与 X86 一样在每次构建时查询 Xray 官方最新发布；BE12 Pro 的 ARM64 Xray 在编译机上用 UPX 压缩后预置到 `/usr/bin/xray`。若最新发布尚无 ARM64 文件，则构建失败而不回退旧版。daed 版不预置 Xray。两版均从官方最新稳定版预置 UPX 压缩后的 AdGuard Home 核心到 `/etc/AdGuardHome/AdGuardHome`，不预置数据/配置文件；首次使用仍需在面板中安装服务并完成设置。
+PassWall 版与 X86 一样在每次构建时查询 Xray 官方最新发布；BE12 Pro 的 ARM64 Xray 在编译机上用 UPX 压缩后预置到 `/usr/bin/xray`。若最新发布尚无 ARM64 文件，则构建失败而不回退旧版。daed 版不预置 Xray。AdGuard Home 默认不查询发布版本、不下载也不预置核心；若需要，请同时选中 `CONFIG_PACKAGE_luci-app-adguardhome-dashboard=y` 和 `CONFIG_PACKAGE_adguardhome-core-prebuilt=y`。选择预置核心后构建时才查询官方稳定版，并在编译机上用 UPX 压缩后放入 `/etc/AdGuardHome/AdGuardHome`。单独选入面板时不会自动预置核心。
 
 ## BE12 Pro 手动更新核心
 
-新编译的 **PassWall 与 daed 两版**均预置 ARM64 静态 UPX 和 `owrt-core-update`；不会后台自动更新。SSH 登录后按需运行：
+PassWall 版为了 Xray 默认预置 ARM64 静态 UPX 和 `owrt-core-update`；daed 版默认不预置这两项。手动选入 AdGuard Home 核心的 daed 版如需命令行更新，可再选择 `CONFIG_PACKAGE_owrt-core-update=y` 和 `CONFIG_PACKAGE_upx-arm64-static=y`。已安装更新器的固件可在 SSH 登录后按需运行：
 
 ```sh
 owrt-core-update adguardhome
 owrt-core-update xray
 ```
 
-只有已安装对应核心时才允许更新：daed 版默认没有 Xray，执行 `xray` 子命令会明确报错。固件已预置 AdGuard Home 核心；更新器不会修改配置或数据。
+只有已安装对应核心时才允许更新：默认的 daed 版没有 Xray，两版均没有 AdGuard Home；执行对应子命令会明确报错。更新器不会修改配置或数据。
 
 脚本从官方 GitHub 发布获取 AdGuard Home 最新稳定版 / Xray 按发布时间最新发布（包括预发布版）的 ARM64 附件，验证发行资产的 SHA256，在 `/tmp` 解包并使用 UPX 压缩和测试。预留临时内存及 overlay 空间后，先在目标目录写入新文件、核对哈希与版本，再替换原核心。运行中的服务会尝试重启，失败时从 `/tmp` 的旧核心副本回滚。若空间或校验不足，直接拒绝替换；**不要重启失败时仍需使用 `/tmp` 备份的设备**。建议事先将重要配置和核心备份到电脑。UPX 运行检查不能代替实际的 DNS / 代理功能测试。
 
-BE12 Pro 两版还预置 `S05agh-ram-data`：开机时创建 `/tmp/AdGuardHome/data` 并将 `/etc/AdGuardHome/data` 指向该目录，早于 AdGuard Home 的 S50/S95 启动。首次刷入后如果保留了旧的持久化 `data`，脚本会将其删除；查询日志、统计、会话及下载的过滤数据此后均在重启时清空。核心和 `AdGuardHome.yaml` 仍在 `/etc/AdGuardHome`，升级前如需保留历史数据请自行备份。日志可能占满内存盘，仍建议限制保留时长。
+仅在 BE12 Pro 选中 AdGuard Home 面板或预置核心时才加入 `S05agh-ram-data`：开机时创建 `/tmp/AdGuardHome/data` 并将 `/etc/AdGuardHome/data` 指向该目录，早于 AdGuard Home 的 S50/S95 启动。首次刷入后如果保留了旧的持久化 `data`，脚本会将其删除；查询日志、统计、会话及下载的过滤数据此后均在重启时清空。核心和 `AdGuardHome.yaml` 仍在 `/etc/AdGuardHome`，升级前如需保留历史数据请自行备份。日志可能占满内存盘，仍建议限制保留时长。
 
-此脚本**不接管 AdGuard Home 自带网页或 LuCI 面板的核心更新按钮**。BE12 Pro 的 flash 空间有限，请勿使用原有页面按钮下载未压缩的新核心；使用上面的手动命令。固件中的 UPX 约 0.6 MiB，但核心更新后写入 `/usr/bin/xray` 或 `/etc/AdGuardHome/AdGuardHome` 的部分仍占用 overlay。X86 固件目前不预置本更新器。
+此脚本**不接管 AdGuard Home 自带网页或 LuCI 面板的核心更新按钮**。BE12 Pro 的 flash 空间有限，请勿使用原有页面按钮下载未压缩的新核心；使用上面的手动命令。选入设备端 UPX 时约占 0.6 MiB，但核心更新后写入 `/usr/bin/xray` 或 `/etc/AdGuardHome/AdGuardHome` 的部分仍占用 overlay。X86 固件目前不预置本更新器。
 
 默认管理地址：192.168.123.1。
 
