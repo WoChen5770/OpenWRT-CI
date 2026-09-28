@@ -20,10 +20,3 @@ BE12 Pro 两版默认都不集成 Bandix、EasyTier 和 AdGuard Home；可通过
 - PassWall 版预置手动核心更新命令 `owrt-core-update xray`；如额外预置 AdGuard Home，可运行 `owrt-core-update adguardhome`。更新核心前请备份配置并确认剩余空间。
 - daed 版默认不带更新器；如需使用，同时选用 `CONFIG_PACKAGE_owrt-core-update=y` 和 `CONFIG_PACKAGE_upx-arm64-static=y`。
 
-## 其他资源
-
-- [ImmortalWrt 官方版](https://github.com/immortalwrt/immortalwrt) · [自用版](https://github.com/VIKINGYFY/immortalwrt) · [本地编译工具](https://github.com/VIKINGYFY/OWRT-Tools) · [自用插件](https://github.com/VIKINGYFY/packages)
-- U-Boot：[高通-沉心](https://github.com/chenxin527/uboot-qsdk12.5-build) · [高通-小猪](https://github.com/1980490718/u-boot-2016) · [联发科-新版](https://github.com/VIKINGYFY/UBOOT-CI/releases) · [联发科-官方版](https://drive.wrt.moe/uboot/mediatek)
-- [IPQ 技术讨论群](https://qm.qq.com/q/v7nMhzB4oU) · [LiBwrt-Ai](https://api.zipimg.cn/register?aff=LR7FSZ2ZZ4D3)
-
-[![Stargazers over time](https://starchart.cc/VIKINGYFY/OpenWRT-CI.svg?variant=adaptive)](https://starchart.cc/VIKINGYFY/OpenWRT-CI)
