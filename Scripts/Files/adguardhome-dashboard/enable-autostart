@@ -8,6 +8,15 @@ fi
 
 for service in /etc/init.d/AdGuardHome /etc/init.d/adguardhome; do
 	[ -x "$service" ] || continue
+	# The native package also gates startup on UCI. Keep its paths and DNS settings.
+	if [ "$service" = /etc/init.d/adguardhome ]; then
+		uci -q get adguardhome.config >/dev/null || exit 1
+		if [ "$(uci -q get adguardhome.config.enabled)" != 1 ]; then
+			uci set adguardhome.config.enabled=1 || exit 1
+		fi
+		# Retry a previously failed commit even if UCI still has a staged value.
+		uci commit adguardhome || exit 1
+	fi
 	if ! "$service" enabled; then
 		"$service" enable || exit 1
 	fi

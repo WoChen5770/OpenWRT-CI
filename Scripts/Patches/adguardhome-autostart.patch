@@ -5,7 +5,7 @@
 +local sys = require "luci.sys"
  local fs = require "nixio.fs"
  local http = require "luci.http"
-@@ -305,7 +306,7 @@
+@@ -421,7 +422,7 @@
  
      if action == "install_service" then
          if bin_path then
@@ -14,10 +14,10 @@
          else
              http.prepare_content("application/json")
              http.write_json({ success = false, error = "binary not found" })
-@@ -326,10 +327,11 @@
+@@ -442,10 +443,11 @@
      local time_str = os.date("%Y-%m-%d %H:%M:%S")
      -- 单次同步动作重置清空日志文件（>），并将运行标准输出重定向回日志 / Single sync action truncates the log file (>) and redirects stdout back into the log
-     util.exec("echo '[" .. time_str .. "] Executing action: " .. action .. "' > " .. EXEC_LOG)
+     log_start("[" .. time_str .. "] Executing action: " .. action)
 -    local result = util.exec(cmd .. " 2>&1 | tee -a " .. EXEC_LOG)
 -    
 +    local rc = sys.call("(" .. cmd .. ") >> " .. EXEC_LOG .. " 2>&1")
@@ -29,16 +29,16 @@
  end
  
  -- 从 AGH 的 CHANGELOG.md（raw.githubusercontent.com 上的同一 host，与面板版本检查一致）
-@@ -422,6 +424,8 @@
+@@ -552,6 +554,8 @@
+     add("INIT_SCRIPTS='" .. init_scripts_str .. "'")
      add("BIN_PATHS='" .. bin_paths_str .. "'")
      add("INSTALL_BASE='" .. install_base .. "'")
-     add("INSTALL_PARENT='" .. install_parent .. "'")
 +    add("HAD_INIT=0")
 +    add("for s_i in $INIT_SCRIPTS; do [ -x \"$s_i\" ] && HAD_INIT=1; done")
      add("")
-     add("cleanup() { rm -f /tmp/agh_install_${TS}.sh 2>/dev/null; }")
-     add("trap 'cleanup' EXIT INT TERM")
-@@ -673,6 +677,20 @@
+     add([==[
+ # ── 统一网络出口：mirror=前缀拼接 / proxy=curl -x / direct=原样 ──
+@@ -883,6 +887,20 @@
      add("  exit 2")
      add("fi")
      add("")

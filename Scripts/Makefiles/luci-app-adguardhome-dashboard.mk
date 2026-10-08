@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-adguardhome-dashboard
-PKG_VERSION:=2.5.6
-PKG_RELEASE:=5
+PKG_VERSION:=2.6.4
+PKG_RELEASE:=1
 PKG_LICENSE:=MIT
 PKG_MAINTAINER:=imonior
 
@@ -62,9 +62,10 @@ define Package/luci-app-adguardhome-dashboard/install
 	$(INSTALL_BIN) ./files/99-adguardhome-autostart \
 		$(1)/etc/uci-defaults/99-adguardhome-autostart
 
-	# 保留完整部署目录（含核心、配置、数据），以及服务和面板代理设置。
+	# 保留原生配置、上游安装目录及历史 /etc 目录，不改动部署路径。
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
-	printf '%s\n' '/etc/AdGuardHome/' '/etc/init.d/AdGuardHome' \
+	printf '%s\n' '/opt/AdGuardHome/' '/etc/adguardhome/' \
+		'/etc/AdGuardHome/' '/etc/init.d/AdGuardHome' \
 		'/etc/rc.d/*AdGuardHome' '/etc/adguardhome-dashboard.proxy' \
 		'/etc/adguardhome-dashboard.autostart-v1' \
 		> $(1)/lib/upgrade/keep.d/adguardhome-dashboard

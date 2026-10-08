@@ -3,6 +3,9 @@ CONFIG_TARGET_x86=y
 CONFIG_TARGET_x86_64=y
 #设备列表
 CONFIG_TARGET_ALL_PROFILES=y
+#预置原生 AdGuard Home 核心及面板，沿用软件包默认路径和服务。
+CONFIG_PACKAGE_adguardhome=y
+CONFIG_PACKAGE_luci-app-adguardhome-dashboard=y
 #X86 使用统一根文件系统，允许完整禁用设备 profile 自带的包。
 #否则 MODULE_DEFAULT_* 会强制把 USB 网卡、automount 等重新选为 m。
 CONFIG_TARGET_PER_DEVICE_ROOTFS=n

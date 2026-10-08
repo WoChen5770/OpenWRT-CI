@@ -8,15 +8,15 @@
 
 | 固件 | 默认内容 |
 | --- | --- |
-| X86 | 虚拟机适配；PassWall + Xray、EasyTier 等，不集成 WiFi 驱动 |
+| X86 | 虚拟机适配；PassWall + Xray、EasyTier、AdGuard Home 核心及面板，不集成 WiFi 驱动 |
 | BE12 Pro PassWall 版 | PassWall + Xray，不集成 daed |
 | BE12 Pro daed 版 | daed，不集成 PassWall + Xray |
 
-BE12 Pro 两版默认都不集成 Bandix、EasyTier 和 AdGuard Home；可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入自行选用。
+X86 使用软件源自带的 `adguardhome` 包，沿用默认二进制 `/usr/bin/AdGuardHome`、配置 `/etc/adguardhome/adguardhome.yaml` 和服务 `/etc/init.d/adguardhome`。首次开机启用服务，不改动 DNS、监听端口或部署路径。
+
+BE12 Pro 两版均不集成 AdGuard Home 面板或核心，也不再执行相关补丁、ARM64 核心预置及数据转存 `/tmp` 的逻辑。Bandix、EasyTier 默认不集成，仍可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入自行选用。
 
 ## BE12 Pro 可选功能
 
-- 预置 AdGuard Home：同时选用 `CONFIG_PACKAGE_luci-app-adguardhome-dashboard=y` 和 `CONFIG_PACKAGE_adguardhome-core-prebuilt=y`。选用后工作数据放在 `/tmp`，**重启会清空日志、统计和下载的过滤数据**。
-- PassWall 版预置手动核心更新命令 `owrt-core-update xray`；如额外预置 AdGuard Home，可运行 `owrt-core-update adguardhome`。更新核心前请备份配置并确认剩余空间。
+- PassWall 版预置手动核心更新命令 `owrt-core-update xray`。更新核心前请备份配置并确认剩余空间。
 - daed 版默认不带更新器；如需使用，同时选用 `CONFIG_PACKAGE_owrt-core-update=y` 和 `CONFIG_PACKAGE_upx-arm64-static=y`。
-
