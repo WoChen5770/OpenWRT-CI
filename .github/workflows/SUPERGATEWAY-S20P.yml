@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+# Super Gateway S20P：2GB 内存 + 128GB 存储，完整组件版本。
+name: SUPERGATEWAY-S20P
+
+on:
+  workflow_run:
+    workflows: ["Auto-Clean"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      PACKAGE:
+        description: '手动调整插件包，多个请用\n符号隔开。'
+        required: false
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  config:
+    name: SUPERGATEWAY-S20P
+    uses: ./.github/workflows/WRT-CORE.yml
+    with:
+      WRT_CONFIG: SUPERGATEWAY-S20P
+      WRT_THEME: bootstrap
+      WRT_NAME: OWRT
+      WRT_SSID: OWRT
+      WRT_WORD: '12345678'
+      WRT_IP: 192.168.123.1
+      WRT_PW: 无
+      WRT_REPO: https://github.com/VIKINGYFY/immortalwrt.git
+      WRT_BRANCH: owrt
+      WRT_SOURCE: VIKINGYFY/immortalwrt
+      WRT_PACKAGE: ${{inputs.PACKAGE}}

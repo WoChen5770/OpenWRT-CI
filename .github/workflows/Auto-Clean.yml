@@ -21,7 +21,8 @@ jobs:
         with:
           gh_token: ${{secrets.GITHUB_TOKEN}}
           delete_releases: true
-          releases_keep_latest: 3
+          # 每轮构建 X86、S20P 及 BE12 Pro 两版，共 4 份固件。
+          releases_keep_latest: 4
           delete_tags: true
           delete_workflows: true
           workflows_keep_day: 3

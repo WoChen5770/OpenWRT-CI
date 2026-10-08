@@ -114,8 +114,8 @@ UPDATE_PACKAGE "openclash" "vernesong/OpenClash" "dev" "pkg"
 UPDATE_PACKAGE "passwall" "Openwrt-Passwall/openwrt-passwall" "main" "pkg"
 UPDATE_PACKAGE "passwall2" "Openwrt-Passwall/openwrt-passwall2" "main" "pkg"
 
-# 仅 X86 集成面板；核心使用 feeds 的 adguardhome 包，不改上游部署路径。
-if [[ "${WRT_CONFIG:-}" == "X86" ]]; then
+# X86 / S20P 集成面板；核心使用 feeds 的 adguardhome 包，不改上游部署路径。
+if [[ "${WRT_CONFIG:-}" == "X86" || "${WRT_CONFIG:-}" == "SUPERGATEWAY-S20P" ]]; then
 	UPDATE_PACKAGE "luci-app-adguardhome-dashboard" "imonior/luci-app-adguardhome-dashboard" "main"
 	cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/luci-app-adguardhome-dashboard.mk" \
 		./package/luci-app-adguardhome-dashboard/Makefile || exit 1
@@ -175,7 +175,7 @@ for PACKAGE_ROOT in ./package ./feeds; do
 		-exec rm -rf -- {} + || exit 1
 done
 
-#最后替换 x86-64 的 Xray 定义，避免其他软件源覆盖；其他架构保持原样。
+#最后替换 X86、S20P 和 BE12 Pro PassWall 版的 Xray 定义，避免其他软件源覆盖。
 bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1
 
 #更新软件包版本

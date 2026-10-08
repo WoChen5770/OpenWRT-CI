@@ -8,7 +8,7 @@ case "${WRT_TARGET:-}/${WRT_SUBTARGET:-}/${WRT_CONFIG:-}" in
 		ARCH_DEPENDS="@x86_64"
 		ARCH_LABEL="x86-64"
 		;;
-	mediatek/filogic/TENDA-BE12-PRO-PASSWALL)
+	mediatek/filogic/TENDA-BE12-PRO-PASSWALL|mediatek/filogic/SUPERGATEWAY-S20P)
 		ASSET="Xray-linux-arm64-v8a.zip"
 		ARCH_DEPENDS="@aarch64"
 		ARCH_LABEL="ARM64"
