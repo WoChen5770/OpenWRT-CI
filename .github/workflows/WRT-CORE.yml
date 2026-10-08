@@ -244,6 +244,22 @@ jobs:
             fi
           fi
 
+          # S20P / BE12 Pro 必须同时具备 Mesh 界面、802.11s、batman-adv 和漫游依赖。
+          if [[ "$WRT_CONFIG" == "SUPERGATEWAY-S20P" || "$WRT_CONFIG" == TENDA-BE12-PRO-* ]]; then
+            for OPTION in PACKAGE_luci-app-mesh PACKAGE_kmod-mac80211 PACKAGE_MAC80211_MESH \
+                          PACKAGE_wpad-openssl PACKAGE_kmod-batman-adv BATMAN_ADV_BLA PACKAGE_batctl-default \
+                          PACKAGE_luci-proto-batman-adv PACKAGE_dawn PACKAGE_umdns; do
+              if ! grep -qx "CONFIG_${OPTION}=y" .config; then
+                echo "::error::$WRT_CONFIG Mesh requirement missing after defconfig: CONFIG_$OPTION"
+                exit 1
+              fi
+            done
+            if grep -Eq '^CONFIG_PACKAGE_wpad-mesh-openssl=[ym]$' .config; then
+              echo "::error::$WRT_CONFIG must not mix wpad-openssl and wpad-mesh-openssl"
+              exit 1
+            fi
+          fi
+
           # daed 必须使用内核集成 BTF；否则 APK 会在固件安装时找不到 vmlinux-btf。
           if [[ "$WRT_CONFIG" == "TENDA-BE12-PRO-DAED" || "$WRT_CONFIG" == "SUPERGATEWAY-S20P" ]]; then
             for OPTION in KERNEL_DEBUG_INFO_BTF KERNEL_XDP_SOCKETS DAED_USE_KERNEL_BTF BPF_TOOLCHAIN_HOST PACKAGE_luci-app-daede_daed; do
@@ -254,6 +270,14 @@ jobs:
             done
           fi
 
+          # X86 / S20P 仅使用 feeds 的原生 LuCI 面板，禁止同时集成旧 Dashboard。
+          if [[ "$WRT_CONFIG" == "X86" || "$WRT_CONFIG" == "SUPERGATEWAY-S20P" ]]; then
+            if grep -Eq '^CONFIG_PACKAGE_luci-app-adguardhome-dashboard=[ym]$' .config; then
+              echo "::error::$WRT_CONFIG must use luci-app-adguardhome, not luci-app-adguardhome-dashboard"
+              exit 1
+            fi
+          fi
+
           # S20P 必须保留正确设备及全部默认组件，不能被 defconfig 静默移除。
           if [[ "$WRT_CONFIG" == "SUPERGATEWAY-S20P" ]]; then
             for OPTION in TARGET_mediatek TARGET_mediatek_filogic \
@@ -262,7 +286,7 @@ jobs:
                           PACKAGE_luci-app-daede PACKAGE_luci-app-daede_daed PACKAGE_daed \
                           PACKAGE_luci-app-bandix PACKAGE_bandix PACKAGE_kmod-sched-core PACKAGE_kmod-sched-bpf \
                           PACKAGE_luci-app-easytier PACKAGE_easytier \
-                          PACKAGE_adguardhome PACKAGE_luci-app-adguardhome-dashboard; do
+                          PACKAGE_adguardhome PACKAGE_luci-app-adguardhome; do
               if ! grep -qx "CONFIG_${OPTION}=y" .config; then
                 echo "::error::Required S20P setting missing after defconfig: CONFIG_$OPTION"
                 exit 1
@@ -273,7 +297,7 @@ jobs:
           # 防止缺失的包符号被 defconfig 静默移除，生成不含 fq 的固件。
           if [[ "$WRT_CONFIG" == "X86" ]]; then
             for PACKAGE in kmod-tcp-bbr kmod-sched tc-full xray-core \
-                           adguardhome luci-app-adguardhome-dashboard; do
+                           adguardhome luci-app-adguardhome; do
               if ! grep -qx "CONFIG_PACKAGE_${PACKAGE}=y" .config; then
                 echo "::error::Required x86 package missing after defconfig: $PACKAGE"
                 exit 1

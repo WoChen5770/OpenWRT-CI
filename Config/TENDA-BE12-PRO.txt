@@ -6,6 +6,20 @@ CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_tenda_be12-pro=y
 CONFIG_PACKAGE_kmod-cryptodev=y
 CONFIG_PACKAGE_kmod-tls=y
 
+# 两个版本均默认集成 802.11s Mesh，保留完整 wpad 并补齐组网/漫游依赖。
+CONFIG_PACKAGE_luci-app-mesh=y
+CONFIG_PACKAGE_kmod-mac80211=y
+CONFIG_PACKAGE_MAC80211_MESH=y
+CONFIG_PACKAGE_wpad-openssl=y
+CONFIG_PACKAGE_wpad-mesh-openssl=n
+CONFIG_PACKAGE_kmod-batman-adv=y
+# 保留有线/无线回程并存时所需的桥环规避。
+CONFIG_BATMAN_ADV_BLA=y
+CONFIG_PACKAGE_batctl-default=y
+CONFIG_PACKAGE_luci-proto-batman-adv=y
+CONFIG_PACKAGE_dawn=y
+CONFIG_PACKAGE_umdns=y
+
 # GENERAL 面向多平台；BE12 Pro 无 USB，不预置 USB、PC 磁盘和音频扩展。
 # 保留 NAND/UBI 维护工具，避免影响刷机维护。
 # PRIVATE.txt / 工作流 PACKAGE 输入仍可按需重新启用以下软件包。

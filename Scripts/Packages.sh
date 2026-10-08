@@ -114,17 +114,7 @@ UPDATE_PACKAGE "openclash" "vernesong/OpenClash" "dev" "pkg"
 UPDATE_PACKAGE "passwall" "Openwrt-Passwall/openwrt-passwall" "main" "pkg"
 UPDATE_PACKAGE "passwall2" "Openwrt-Passwall/openwrt-passwall2" "main" "pkg"
 
-# X86 / S20P 集成面板；核心使用 feeds 的 adguardhome 包，不改上游部署路径。
-if [[ "${WRT_CONFIG:-}" == "X86" || "${WRT_CONFIG:-}" == "SUPERGATEWAY-S20P" ]]; then
-	UPDATE_PACKAGE "luci-app-adguardhome-dashboard" "imonior/luci-app-adguardhome-dashboard" "main"
-	cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/luci-app-adguardhome-dashboard.mk" \
-		./package/luci-app-adguardhome-dashboard/Makefile || exit 1
-	# 保留开机自启迁移及服务操作返回值修复，补丁失配时停止构建。
-	cp -f "$GITHUB_WORKSPACE/Scripts/Files/adguardhome-dashboard/"* \
-		./package/luci-app-adguardhome-dashboard/files/ || exit 1
-	patch --batch --forward --fuzz=0 -d ./package/luci-app-adguardhome-dashboard -p1 \
-		< "$GITHUB_WORKSPACE/Scripts/Patches/adguardhome-autostart.patch" || exit 1
-fi
+# X86 / S20P 的 adguardhome 和 luci-app-adguardhome 直接使用 feeds，不覆盖或打补丁。
 UPDATE_PACKAGE_GROUP "kenzok8/small" "master" "dae" "daed" "luci-app-daede" "v2ray-geodata"
 UPDATE_PACKAGE "diskman" "sbwml/luci-app-diskman" "main"
 # 不集成到固件：磁盘/分区管理类（mini-diskmanager）
@@ -174,6 +164,9 @@ for PACKAGE_ROOT in ./package ./feeds; do
 		-iname 'luci-i18n-qmodem*' \) -prune \
 		-exec rm -rf -- {} + || exit 1
 done
+
+# S20P / BE12 Pro 默认集成 Gitee Mesh；其他机型不拉取或改动该包。
+bash "$GITHUB_WORKSPACE/Scripts/Mesh.sh" || exit 1
 
 #最后替换 X86、S20P 和 BE12 Pro PassWall 版的 Xray 定义，避免其他软件源覆盖。
 bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1

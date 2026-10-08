@@ -25,7 +25,7 @@ sed -i "s/192\.168\.[0-9]*\.[0-9]*/$WRT_IP/g" $CFG_FILE
 #修改默认主机名
 sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 
-#固件首次开机自动配置脚本（HTTPS 重定向、网络调优等）
+#固件首次开机自动配置脚本（HTTPS 监听、网络调优等，不强制 HTTP 跳转）
 mkdir -p ./package/base-files/files/etc/uci-defaults
 cp -f -r "$GITHUB_WORKSPACE/Scripts/uci-defaults/." \
 	./package/base-files/files/etc/uci-defaults/
