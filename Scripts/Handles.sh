@@ -5,6 +5,23 @@
 FEEDS_PATH="./feeds"
 PACKAGE_PATH="./package"
 
+#修补命令统一入口：FIX <名称> <守卫目录> <命令...>
+#守卫目录不存在时直接跳过，保证在 bash -e 下不中断
+FIX() {
+	local NAME=$1
+	local GUARD=$2
+	shift 2
+
+	[ -d "$GUARD" ] || return 0
+
+	echo " "
+	if "$@"; then
+		echo "$NAME has been fixed!"
+	else
+		echo "$NAME fix failed; continuing!"
+	fi
+}
+
 #Nikki 的两个 Mihomo 变体双向 CONFLICTS 会生成 Kconfig 循环依赖。
 #仅在已知双向声明存在时，保留 meta -> alpha 的单向互斥；源码和两个变体均保留。
 MIHOMO_ALPHA_FILE="$PACKAGE_PATH/OpenWrt-nikki/mihomo-alpha/Makefile"
@@ -183,48 +200,22 @@ if [ -n "$HP_DIR" ]; then
 fi
 
 #修改argon主题字体和颜色
-if [ -d "$PACKAGE_PATH/luci-theme-argon" ]; then
-	echo " "
-	if sed -i "s/primary '.*'/primary '#31a1a1'/g; s/'0.2'/'0.5'/g; s/'none'/'bing'/g; s/'600'/'normal'/g" \
-		"$PACKAGE_PATH/luci-theme-argon/luci-app-argon-config/root/etc/config/argon"; then
-		echo "theme-argon has been fixed!"
-	else
-		echo "theme-argon fix failed; continuing!"
-	fi
-fi
+FIX "theme-argon" "$PACKAGE_PATH/luci-theme-argon" sed -i \
+	"s/primary '.*'/primary '#31a1a1'/g; s/'0.2'/'0.5'/g; s/'none'/'bing'/g; s/'600'/'normal'/g" \
+	"$PACKAGE_PATH/luci-theme-argon/luci-app-argon-config/root/etc/config/argon"
 
 #修改aurora菜单式样
-if [ -d "$PACKAGE_PATH/luci-app-aurora-config" ]; then
-	echo " "
-	if find "$PACKAGE_PATH/luci-app-aurora-config/root/usr/share/aurora/" -type f -name '*.template' -exec \
-		sed -i "s/nav_type '.*'/nav_type 'dropdown'/g; s/struct_radius_base '.*'/struct_radius_base '0.125rem'/g" {} +; then
-		echo "theme-aurora has been fixed!"
-	else
-		echo "theme-aurora fix failed; continuing!"
-	fi
-fi
+FIX "theme-aurora" "$PACKAGE_PATH/luci-app-aurora-config" find \
+	"$PACKAGE_PATH/luci-app-aurora-config/root/usr/share/aurora/" -type f -name '*.template' -exec sed -i \
+	"s/nav_type '.*'/nav_type 'dropdown'/g; s/struct_radius_base '.*'/struct_radius_base '0.125rem'/g" {} +
 
 #修改mini-diskmanager菜单位置
-if [ -d "$PACKAGE_PATH/luci-app-mini-diskmanager" ]; then
-	echo " "
-	if sed -i "s/services/system/g" \
-		"$PACKAGE_PATH/luci-app-mini-diskmanager/luci-app-mini-diskmanager/root/usr/share/luci/menu.d/luci-app-mini-diskmanager.json"; then
-		echo "mini-diskmanager has been fixed!"
-	else
-		echo "mini-diskmanager fix failed; continuing!"
-	fi
-fi
+FIX "mini-diskmanager" "$PACKAGE_PATH/luci-app-mini-diskmanager" sed -i "s/services/system/g" \
+	"$PACKAGE_PATH/luci-app-mini-diskmanager/luci-app-mini-diskmanager/root/usr/share/luci/menu.d/luci-app-mini-diskmanager.json"
 
 #修改natmapt菜单位置
-if [ -d "$PACKAGE_PATH/luci-app-natmapt" ]; then
-	echo " "
-	if sed -i "s/network/services/g" \
-		"$PACKAGE_PATH/luci-app-natmapt/root/usr/share/luci/menu.d/luci-app-natmap.json"; then
-		echo "natmapt has been fixed!"
-	else
-		echo "natmapt fix failed; continuing!"
-	fi
-fi
+FIX "natmapt" "$PACKAGE_PATH/luci-app-natmapt" sed -i "s/network/services/g" \
+	"$PACKAGE_PATH/luci-app-natmapt/root/usr/share/luci/menu.d/luci-app-natmap.json"
 
 #修复TailScale配置文件冲突
 FEEDS_PACKAGES="$FEEDS_PATH/packages"
@@ -242,11 +233,5 @@ fi
 #修复Rust编译失败
 RUST_FILE="$(find "$FEEDS_PACKAGES" -maxdepth 3 -type f -wholename '*/rust/Makefile' -print -quit 2>/dev/null)"
 if [ -f "$RUST_FILE" ]; then
-	echo " "
-
-	if sed -i 's/ci-llvm=true/ci-llvm=false/g' "$RUST_FILE"; then
-		echo "rust has been fixed!"
-	else
-		echo "rust fix failed; continuing!"
-	fi
+	FIX "rust" "${RUST_FILE%/*}" sed -i 's/ci-llvm=true/ci-llvm=false/g' "$RUST_FILE"
 fi
