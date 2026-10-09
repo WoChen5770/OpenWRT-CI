@@ -1,9 +1,9 @@
 #!/bin/bash
-# S20P / BE12 Pro: fetch the requested Gitee Mesh package without changing its runtime defaults.
+# S20P / BE12 Pro / BE6500: fetch the Gitee Mesh package without changing its runtime defaults.
 set -euo pipefail
 
 case "${WRT_CONFIG:-}" in
-	SUPERGATEWAY-S20P|TENDA-BE12-PRO-PASSWALL|TENDA-BE12-PRO-DAED) ;;
+	SUPERGATEWAY-S20P|TENDA-BE12-PRO|XIAOMI-BE6500) ;;
 	*) exit 0 ;;
 esac
 
@@ -23,7 +23,7 @@ git clone --depth=1 --single-branch --branch master \
 test -f "$MESH_TMP/source/Makefile"
 test -f "$MESH_TMP/source/root/etc/config/mesh"
 
-# Filogic already defaults to full wpad-openssl, which includes 802.11s/SAE.
+# Filogic and qualcommbe default to full wpad-openssl, which includes 802.11s/SAE.
 # Do not install the conflicting wpad-mesh-openssl variant alongside it.
 patch --batch --forward --fuzz=0 -d "$MESH_TMP/source" -p1 \
 	< "$GITHUB_WORKSPACE/Scripts/Patches/mesh-wpad-openssl.patch"

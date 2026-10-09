@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
-# Tenda BE12 Pro Mesh 版固件（自动与手动触发）
-name: TENDA-BE12-PRO
+# Xiaomi BE6500 Mesh 版固件（自动与手动触发）
+name: XIAOMI-BE6500
 
 on:
-  # Match X86: build after the daily Auto-Clean workflow finishes.
+  # 与 BE12 Pro 一致：每日 Auto-Clean 完成后构建。
   workflow_run:
     workflows: ["Auto-Clean"]
     types:
@@ -19,10 +19,10 @@ permissions: write-all
 
 jobs:
   config:
-    name: TENDA-BE12-PRO
+    name: XIAOMI-BE6500
     uses: ./.github/workflows/WRT-CORE.yml
     with:
-      WRT_CONFIG: TENDA-BE12-PRO
+      WRT_CONFIG: XIAOMI-BE6500
       WRT_THEME: bootstrap
       WRT_NAME: OWRT
       WRT_SSID: OWRT

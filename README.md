@@ -18,37 +18,45 @@ uci commit uhttpd
 
 ## 编译
 
-每日 `Auto-Clean` 完成后自动编译 X86、Super Gateway S20P 和 Tenda BE12 Pro；也可在 Actions 中手动运行相应工作流。BE12 Pro 手动运行时可选择 `BOTH`、`PASSWALL` 或 `DAED`。
+每日 `Auto-Clean` 完成后自动编译 X86、Super Gateway S20P、Tenda BE12 Pro 和小米 BE6500；也可在 Actions 中手动运行相应工作流。BE12 Pro 和 BE6500 均只编译一个 Mesh 版本，不区分 PassWall / daed 版。
 
 | 固件 | 默认内容 |
 | --- | --- |
 | X86 | 虚拟机适配；PassWall + Xray、EasyTier、AdGuard Home 核心及面板，不集成 WiFi 驱动 |
 | S20P | 2GB 内存 + 128GB 存储；PassWall + Xray、daed、Bandix、EasyTier、AdGuard Home 核心及面板、Mesh 组网，保留上游 WiFi 和存储驱动 |
-| BE12 Pro PassWall 版 | PassWall + Xray、Mesh 组网，不集成 daed |
-| BE12 Pro daed 版 | daed、Mesh 组网，不集成 PassWall + Xray |
+| BE12 Pro | Mesh 组网；默认不集成 UPnP、WOLUltra、PassWall、daed 及 Xray 核心 |
+| 小米 BE6500 | 参考 BE12 Pro 的 Mesh 精简配置；保留高通 ath12k 无线驱动、固件和专用校准数据 |
 
 X86 和 S20P 的核心 `adguardhome` 与面板 [`luci-app-adguardhome`](https://github.com/immortalwrt/luci/tree/master/applications/luci-app-adguardhome) 均使用 ImmortalWrt 软件源的原生软件包，不再拉取 `luci-app-adguardhome-dashboard`，也不应用自定义面板 Makefile、补丁或自启脚本。沿用默认二进制 `/usr/bin/AdGuardHome`、配置 `/etc/adguardhome/adguardhome.yaml` 和服务 `/etc/init.d/adguardhome`，不改动 DNS、监听端口或部署路径。
 
 全新配置沿用上游默认的未启用状态，需在 LuCI 的 AdGuard Home 页面勾选“启用”并“保存并应用”；不再强制修改已有配置的启用状态。LuCI 面板管理服务及运行参数，过滤规则、查询日志等仍通过 AdGuard Home 核心自带的 Web 界面配置，不再提供 Dashboard 的在线升级和备份管理入口。
 
-BE12 Pro 两版均不集成 AdGuard Home 面板或核心，也不再执行相关补丁、ARM64 核心预置及数据转存 `/tmp` 的逻辑。Bandix、EasyTier 默认不集成，仍可通过 `Config/PRIVATE.txt` 或工作流的 `PACKAGE` 输入自行选用。
+BE12 Pro 和 BE6500 不集成 AdGuard Home 面板或核心，也不执行相关补丁、ARM64 核心预置及数据转存 `/tmp` 的逻辑。Bandix、EasyTier、UPnP、WOLUltra、PassWall、daed、Xray、UPX 和手动核心更新器均默认不集成；仍保留 `Config/PRIVATE.txt` 和工作流 `PACKAGE` 输入供主动选用扩展。基础 LuCI 管理、防火墙、软件包管理、路由角色、FullCone NAT、定时重启及主题保持原有默认。
 
 ## S20P
 
 - Actions 工作流：`SUPERGATEWAY-S20P`，配置文件：`Config/SUPERGATEWAY-S20P.txt`，设备标识：`supergateway_s20p`。
 - 使用上游 MT7986A / Filogic 设备定义，保留 2GB 内存设置、WiFi、USB、MMC/NVMe 及文件系统支持；不修改 eMMC 分区布局，也不自动扩容到 128GB。
-- Xray 使用最新官方 ARM64 二进制（包含预发布版本），不做 UPX 压缩；不预置 BE12 Pro 的手动核心更新器，也不把 AdGuard Home 数据转存到 `/tmp`。
+- Xray 使用最新官方 ARM64 二进制（包含预发布版本），不做 UPX 压缩；不预置手动核心更新器，也不把 AdGuard Home 数据转存到 `/tmp`。
 - 保留 EasyTier 核心与 LuCI，不额外集成 Web Console。管理地址仍为 `192.168.123.1`。
 
-## Mesh 组网（S20P / BE12 Pro）
+## Mesh 组网（S20P / BE12 Pro / BE6500）
 
-S20P 和 BE12 Pro 两版默认集成 [dffxy/luci-app-mesh](https://gitee.com/dffxy/luci-app-mesh) 的 `master` 分支，配套 802.11s、batman-adv、`batctl-default`、LuCI batman-adv 协议支持及 DAWN/umdns。X86 不集成。构建时仅把插件的 `wpad-mesh-openssl` 依赖改为 Filogic 默认的完整 `wpad-openssl`（已包含 Mesh/SAE），避免两个互斥版本同时安装；界面、服务脚本和默认配置不修改。
+S20P、BE12 Pro 和 BE6500 默认集成 [dffxy/luci-app-mesh](https://gitee.com/dffxy/luci-app-mesh) 的 `master` 分支，配套 802.11s、batman-adv、`batctl-default`、LuCI batman-adv 协议支持及 DAWN/umdns。X86 不集成。构建时仅把插件的 `wpad-mesh-openssl` 依赖改为 Filogic / qualcommbe 默认的完整 `wpad-openssl`（已包含 Mesh/SAE），避免两个互斥版本同时安装；界面、服务脚本和默认配置不修改。
 
 保留上游 `enabled=0`：仅预装，不自动组网。刷入后在“网络 → Mesh 组网”检查无线能力并配置角色、Mesh ID 和密码。启用子节点会由插件合并 WAN/LAN、关闭本机 DHCP，并改为从主节点获取管理地址；操作前请备份配置并留意回滚确认提示。
 
 已知兼容限制：上游 `meshctl` 的配置同步请求固定使用 HTTP，且 `curl` 未开启跟随跳转。本仓库默认不强制跳转；若手动开启 HTTP → HTTPS 跳转或关闭 HTTP 监听，子节点自动同步可能失败。Mesh 同步脚本保持上游原样，组网效果仍需实机确认。
 
-## BE12 Pro 可选功能
+## BE12 Pro 构建
 
-- PassWall 版预置手动核心更新命令 `owrt-core-update xray`。更新核心前请备份配置并确认剩余空间。
-- daed 版默认不带更新器；如需使用，同时选用 `CONFIG_PACKAGE_owrt-core-update=y` 和 `CONFIG_PACKAGE_upx-arm64-static=y`。
+- Actions 工作流：`TENDA-BE12-PRO`，配置文件：`Config/TENDA-BE12-PRO.txt`。
+- 默认只构建 Mesh 版，不下载官方 Xray 二进制，不安装构建主机 UPX，也不预置设备端 UPX 或核心更新器。
+- CI 会在 `make defconfig` 后核对 Mesh 依赖，并检查默认关闭的软件包没有被依赖重新选中；主动使用私有配置或 `PACKAGE` 输入时允许覆盖默认裁剪。
+
+## 小米 BE6500 构建
+
+- Actions 工作流：`XIAOMI-BE6500`，配置文件：`Config/XIAOMI-BE6500.txt`；与 BE12 Pro 一样支持每日自动构建和手动 `PACKAGE` 输入，使用独立缓存及 Release 标签。
+- 使用[上游 BE6500 设备定义](https://github.com/VIKINGYFY/immortalwrt/blob/owrt/target/linux/qualcommbe/image/ipq53xx.mk)：`qualcommbe/ipq53xx`、`xiaomi_be6500`（IPQ5312）。不修改设备树或 NAND/UBI 分区布局，不使用 BE12 Pro 的 Filogic 设备配置。
+- 插件裁剪、Mesh 依赖、主题和默认管理地址均参考 BE12 Pro；保留 `kmod-qcom-ppe`、`kmod-ath12k`、上游 IPQ5332/QCN9274 固件及 `ipq-wifi-xiaomi_be6500`，CI 会检查这些必要组件。
+- Mesh 仅预装，默认不启用；无线频段组合、漫游及组网稳定性仍需实机验证。这是 OpenWrt 的 802.11s/batman-adv 方案，不保证兼容小米原厂一键 Mesh。

@@ -165,10 +165,10 @@ for PACKAGE_ROOT in ./package ./feeds; do
 		-exec rm -rf -- {} + || exit 1
 done
 
-# S20P / BE12 Pro 默认集成 Gitee Mesh；其他机型不拉取或改动该包。
+# S20P / BE12 Pro / BE6500 默认集成 Gitee Mesh；其他机型不拉取或改动该包。
 bash "$GITHUB_WORKSPACE/Scripts/Mesh.sh" || exit 1
 
-#最后替换 X86、S20P 和 BE12 Pro PassWall 版的 Xray 定义，避免其他软件源覆盖。
+#最后替换 X86 和 S20P 的 Xray 定义；BE12 Pro / BE6500 默认不集成代理核心。
 bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1
 
 #更新软件包版本
@@ -220,7 +220,7 @@ if [ -f "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh" ]; then
 	source "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh"
 fi
 
-# BE12 Pro: small prebuilt ARM64 UPX and a manual, checked /tmp-first core updater.
+# 可选 ARM64 工具定义：保留供私有配置选用，BE12 Pro / BE6500 默认不预置。
 mkdir -p ./package/upx-arm64-static ./package/owrt-core-update/files
 cp -f "$GITHUB_WORKSPACE/Scripts/Makefiles/upx-arm64-static.mk" \
     ./package/upx-arm64-static/Makefile || exit 1
