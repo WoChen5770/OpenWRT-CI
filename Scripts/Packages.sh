@@ -168,6 +168,9 @@ done
 # S20P / BE12 Pro / BE6500 默认集成 Gitee Mesh；其他机型不拉取或改动该包。
 bash "$GITHUB_WORKSPACE/Scripts/Mesh.sh" || exit 1
 
+# S20P 额外预装 honk + LuCI；保留 daed，不启用 honk 或改写现有代理/DNS。
+bash "$GITHUB_WORKSPACE/Scripts/Honk.sh" || exit 1
+
 #最后替换 X86 和 S20P 的 Xray 定义；BE12 Pro / BE6500 默认不集成代理核心。
 bash "$GITHUB_WORKSPACE/Scripts/Xray.sh" || exit 1
 

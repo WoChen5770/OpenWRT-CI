@@ -60,6 +60,10 @@ S20P_PASSWALL_DISABLED = tuple(
     "shadowsocksr-libev-ssr-server", "shadow-tls", "simple-obfs-client",
     "simple-obfs-server", "sing-box", "sing-box-tiny", "v2ray-plugin", "xray-plugin",
 )
+S20P_HONK_PACKAGES = (
+    "honk", "luci-app-honk", "luci-i18n-honk-zh-cn", "kmod-veth",
+    "kmod-nft-queue", "v2ray-geoip", "v2ray-geosite",
+)
 
 
 def profile_config(profile):
@@ -175,6 +179,16 @@ class ProfileConfigTests(unittest.TestCase):
             with self.subTest(helper=package):
                 self.assertNotEqual(config.get(f"CONFIG_PACKAGE_{package}"), "n")
 
+    def test_honk_only_added_to_s20p_alongside_daed(self):
+        config = profile_config("SUPERGATEWAY-S20P")
+        for package in (*S20P_HONK_PACKAGES, "daed", "luci-app-daede", "luci-app-daede_daed"):
+            with self.subTest(package=package):
+                self.assertEqual(config[f"CONFIG_PACKAGE_{package}"], "y")
+        for profile in ("X86", *MESH_ONLY_PROFILES):
+            for package in ("honk", "luci-app-honk", "luci-i18n-honk-zh-cn"):
+                with self.subTest(profile=profile, package=package):
+                    self.assertNotIn(profile_config(profile).get(f"CONFIG_PACKAGE_{package}"), ("y", "m"))
+
 
 @unittest.skipUnless(BASH, "Bash is required for read-only CI checks")
 class ShellChecks(unittest.TestCase):
@@ -266,6 +280,16 @@ grep() {
         }, overrides="CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox=y")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_s20p_honk_and_dependencies_are_required(self):
+        for package in S20P_HONK_PACKAGES:
+            for value in ("n", "m"):
+                with self.subTest(package=package, value=value):
+                    result = self.run_guards("SUPERGATEWAY-S20P",
+                                             updates={f"CONFIG_PACKAGE_{package}": value})
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(f"Required S20P setting missing after defconfig: "
+                                  f"CONFIG_PACKAGE_{package}", result.stdout)
+
     def test_mesh_dependencies_and_device_are_required(self):
         for profile in MESH_ONLY_PROFILES:
             target, subtarget = TARGETS[profile]
@@ -327,9 +351,10 @@ grep() {
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, f"{target}|{subtarget}|{prefix}")
 
-    def test_mesh_and_xray_target_gates(self):
+    def test_mesh_xray_and_honk_target_gates(self):
         for name, selected in (("Mesh", {*MESH_ONLY_PROFILES, "SUPERGATEWAY-S20P"}),
-                               ("Xray", {"X86", "SUPERGATEWAY-S20P"})):
+                               ("Xray", {"X86", "SUPERGATEWAY-S20P"}),
+                               ("Honk", {"SUPERGATEWAY-S20P"})):
             source = (ROOT / "Scripts" / f"{name}.sh").read_text(encoding="utf-8")
             gate = source[:source.index("\nesac") + len("\nesac")]
             for profile in TARGETS:

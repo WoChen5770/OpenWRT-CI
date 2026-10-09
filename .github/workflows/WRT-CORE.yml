@@ -265,6 +265,8 @@ jobs:
                           TARGET_DEVICE_mediatek_filogic_DEVICE_supergateway_s20p \
                           PACKAGE_luci-app-passwall PACKAGE_luci-app-passwall_INCLUDE_Xray PACKAGE_xray-core \
                           PACKAGE_luci-app-daede PACKAGE_luci-app-daede_daed PACKAGE_daed \
+                          PACKAGE_honk PACKAGE_luci-app-honk PACKAGE_luci-i18n-honk-zh-cn \
+                          PACKAGE_kmod-veth PACKAGE_kmod-nft-queue PACKAGE_v2ray-geoip PACKAGE_v2ray-geosite \
                           PACKAGE_luci-app-bandix PACKAGE_bandix PACKAGE_kmod-sched-core PACKAGE_kmod-sched-bpf \
                           PACKAGE_luci-app-easytier PACKAGE_easytier \
                           PACKAGE_adguardhome PACKAGE_luci-app-adguardhome; do

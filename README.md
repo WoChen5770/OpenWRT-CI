@@ -23,7 +23,7 @@ uci commit uhttpd
 | 固件 | 默认内容 |
 | --- | --- |
 | X86 | 虚拟机适配；PassWall + Xray、EasyTier、AdGuard Home 核心及面板，不集成 WiFi 驱动 |
-| S20P | 2GB 内存 + 128GB 存储；PassWall + Xray、daed、Bandix、EasyTier、AdGuard Home 核心及面板、Mesh 组网，保留上游 WiFi 和存储驱动 |
+| S20P | 2GB 内存 + 128GB 存储；PassWall + Xray、daed、honk + LuCI（默认关闭）、Bandix、EasyTier、AdGuard Home 核心及面板、Mesh 组网，保留上游 WiFi 和存储驱动 |
 | BE12 Pro | Mesh 组网；默认不集成 UPnP、WOLUltra、PassWall、daed 及 Xray 核心 |
 | 小米 BE6500 | 参考 BE12 Pro 的 Mesh 精简配置；保留高通 ath12k 无线驱动、固件和专用校准数据 |
 
@@ -40,6 +40,17 @@ BE12 Pro 和 BE6500 不集成 AdGuard Home 面板或核心，也不执行相关�
 - Xray 使用最新官方 ARM64 二进制（包含预发布版本），不做 UPX 压缩；不预置手动核心更新器，也不把 AdGuard Home 数据转存到 `/tmp`。
 - PassWall 默认只使用 Xray，不再编译 Shadowsocks-Rust、ShadowsocksR、Sing-Box、Hysteria、NaiveProxy、Shadow-TLS、HAProxy 及 Shadowsocks 插件后端；保留 Geoview、地理数据和透明代理依赖。独立的 daed、Bandix、EasyTier、AdGuard Home 和 Mesh 不受影响。CI 在 `make defconfig` 后检查被禁用的选项及软件包未重新变为 `y/m`；私有配置或 `PACKAGE` 输入仍可显式覆盖默认裁剪。
 - 保留 EasyTier 核心与 LuCI，不额外集成 Web Console。管理地址仍为 `192.168.123.1`。
+
+### honk 试用（仅 S20P）
+
+额外预装 [`189160/luci-app-honk`](https://github.com/189160/luci-app-honk) 的 `honk`、`luci-app-honk` 和中文语言包，**保留 daed 及 `luci-app-daede`，不做替换**。其他机型不拉取或默认集成 honk。
+
+`Scripts/Honk.sh` 固定打包源码提交 `5643dc570baf158b65d0bf7342afd6e15ab305fc`：核心为 `2026.10.9_beta2`（`Glassyiris/honk` 的 `debug.2026.10.9.native-api.2`），LuCI 为 `2.0.0-r3`。沿用上游 ARM64 musl 预编译核心及 `PKG_HASH` 校验，不执行一键安装/自动更新脚本，也不在固件构建中编译 Rust。更新版本需显式修改固定提交并重新核对核心、面板和默认配置。
+
+- 全新配置保留上游 `enabled=0`，native API 配置也保持注释关闭；仅预装，不自动接管流量，不修改 PassWall、daed、AdGuard Home 或 dnsmasq 的配置。升级时保留用户已有的 honk 配置，不强制关闭用户已启用的服务。
+- 界面入口为“服务 → HONK”。首次试用需自行配置节点/订阅、路由和 DNS；模板不是开箱即用配置。启用原生面板时需设置认证，优先使用与核心配套的 `ui: 'embedded'`，不要直接把管理接口暴露到 WAN。
+- **不要同时启动 honk 与 dae/daed**：它们使用相同的 `dae0` / `daens` 网络资源。试用前先停止 daed，并关闭 PassWall 对同一批流量的透明代理；切回时先正常停止 honk。这里只允许软件包共存，不代表多个透明代理可以同时接管同一网络。
+- 保留现有 BTF、XDP 和 eBPF 内核支持，并核对 NFQUEUE、veth、GeoIP/Geosite 依赖。honk 仍是实验性 alpha，首次部署应保留有线管理及回退方式；需实机验证 TCP/UDP、IPv4/IPv6、DNS、重载和停止后的网络恢复。
 
 ## Mesh 组网（S20P / BE12 Pro / BE6500）
 
