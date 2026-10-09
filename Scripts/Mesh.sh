@@ -1,5 +1,5 @@
 #!/bin/bash
-# S20P / BE12 Pro / BE6500: fetch the Gitee Mesh package without changing its runtime defaults.
+# S20P / BE12 Pro / BE6500: fetch xxosdev/luci-app-mesh without changing its runtime defaults.
 set -euo pipefail
 
 case "${WRT_CONFIG:-}" in
@@ -18,8 +18,8 @@ done
 MESH_TMP=$(mktemp -d)
 trap 'rm -rf -- "$MESH_TMP"' EXIT
 
-git clone --depth=1 --single-branch --branch master \
-	https://gitee.com/dffxy/luci-app-mesh.git "$MESH_TMP/source"
+git clone --depth=1 --single-branch --branch main \
+	https://github.com/xxosdev/luci-app-mesh.git "$MESH_TMP/source"
 test -f "$MESH_TMP/source/Makefile"
 test -f "$MESH_TMP/source/root/etc/config/mesh"
 

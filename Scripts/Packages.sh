@@ -165,7 +165,7 @@ for PACKAGE_ROOT in ./package ./feeds; do
 		-exec rm -rf -- {} + || exit 1
 done
 
-# S20P / BE12 Pro / BE6500 默认集成 Gitee Mesh；其他机型不拉取或改动该包。
+# S20P / BE12 Pro / BE6500 默认集成 xxosdev/luci-app-mesh；其他机型不拉取或改动该包。
 bash "$GITHUB_WORKSPACE/Scripts/Mesh.sh" || exit 1
 
 # S20P 额外预装 honk + LuCI；保留 daed，不启用 honk 或改写现有代理/DNS。

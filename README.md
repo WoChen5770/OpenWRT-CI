@@ -54,7 +54,7 @@ BE12 Pro 和 BE6500 不集成 AdGuard Home 面板或核心，也不执行相关�
 
 ## Mesh 组网（S20P / BE12 Pro / BE6500）
 
-S20P、BE12 Pro 和 BE6500 默认集成 [dffxy/luci-app-mesh](https://gitee.com/dffxy/luci-app-mesh) 的 `master` 分支，配套 802.11s、batman-adv、`batctl-default`、LuCI batman-adv 协议支持及 DAWN/umdns。X86 不集成。构建时仅把插件的 `wpad-mesh-openssl` 依赖改为 Filogic / qualcommbe 默认的完整 `wpad-openssl`（已包含 Mesh/SAE），避免两个互斥版本同时安装；界面、服务脚本和默认配置不修改。
+S20P、BE12 Pro 和 BE6500 默认集成 [xxosdev/luci-app-mesh](https://github.com/xxosdev/luci-app-mesh) 的 `main` 分支，配套 802.11s、batman-adv、`batctl-default`、LuCI batman-adv 协议支持及 DAWN/umdns。X86 不集成。构建时仅把插件的 `wpad-mesh-openssl` 依赖改为 Filogic / qualcommbe 默认的完整 `wpad-openssl`（已包含 Mesh/SAE），避免两个互斥版本同时安装；界面、服务脚本和默认配置不修改。
 
 保留上游 `enabled=0`：仅预装，不自动组网。刷入后在“网络 → Mesh 组网”检查无线能力并配置角色、Mesh ID 和密码。启用子节点会由插件合并 WAN/LAN、关闭本机 DHCP，并改为从主节点获取管理地址；操作前请备份配置并留意回滚确认提示。
 
