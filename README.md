@@ -38,6 +38,7 @@ BE12 Pro 和 BE6500 不集成 AdGuard Home 面板或核心，也不执行相关�
 - Actions 工作流：`SUPERGATEWAY-S20P`，配置文件：`Config/SUPERGATEWAY-S20P.txt`，设备标识：`supergateway_s20p`。
 - 使用上游 MT7986A / Filogic 设备定义，保留 2GB 内存设置、WiFi、USB、MMC/NVMe 及文件系统支持；不修改 eMMC 分区布局，也不自动扩容到 128GB。
 - Xray 使用最新官方 ARM64 二进制（包含预发布版本），不做 UPX 压缩；不预置手动核心更新器，也不把 AdGuard Home 数据转存到 `/tmp`。
+- PassWall 默认只使用 Xray，不再编译 Shadowsocks-Rust、ShadowsocksR、Sing-Box、Hysteria、NaiveProxy、Shadow-TLS、HAProxy 及 Shadowsocks 插件后端；保留 Geoview、地理数据和透明代理依赖。独立的 daed、Bandix、EasyTier、AdGuard Home 和 Mesh 不受影响。CI 在 `make defconfig` 后检查被禁用的选项及软件包未重新变为 `y/m`；私有配置或 `PACKAGE` 输入仍可显式覆盖默认裁剪。
 - 保留 EasyTier 核心与 LuCI，不额外集成 Web Console。管理地址仍为 `192.168.123.1`。
 
 ## Mesh 组网（S20P / BE12 Pro / BE6500）

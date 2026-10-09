@@ -273,6 +273,22 @@ jobs:
                 exit 1
               fi
             done
+
+            # PassWall 默认仅用 Xray：同时核对 INCLUDE 和实际包，禁止以 y/m 偷带回其他后端。
+            # 延续私有配置 / PACKAGE 输入的显式覆盖能力。
+            if [[ ! -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" && -z "$WRT_PACKAGE" ]]; then
+              CONFIG_ERRORS=0
+              while IFS='=' read -r OPTION VALUE; do
+                [[ "$OPTION" == CONFIG_PACKAGE_* && "$VALUE" == n ]] || continue
+                if SELECTED=$(grep -E "^${OPTION}=[ym]$" .config); then
+                  echo "::error::Disabled S20P package selected after defconfig: $SELECTED"
+                  CONFIG_ERRORS=1
+                fi
+              done < "$GITHUB_WORKSPACE/Config/SUPERGATEWAY-S20P.txt"
+              if [[ "$CONFIG_ERRORS" != 0 ]]; then
+                exit 1
+              fi
+            fi
           fi
 
           # 防止缺失的包符号被 defconfig 静默移除，生成不含 fq 的固件。

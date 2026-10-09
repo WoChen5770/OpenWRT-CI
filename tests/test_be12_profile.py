@@ -1,4 +1,4 @@
-"""Read-only BE12 Pro / BE6500 checks; run with python -B tests/test_be12_profile.py.
+"""Read-only firmware profile checks; run with python -B tests/test_be12_profile.py.
 
 These tests exercise CI assertions with synthetic .config values, not OpenWrt's
 Kconfig resolver or a firmware build. Bash is required for the shell checks;
@@ -44,6 +44,21 @@ MESH = (
     "PACKAGE_wpad-openssl", "PACKAGE_kmod-batman-adv", "BATMAN_ADV_BLA",
     "PACKAGE_batctl-default", "PACKAGE_luci-proto-batman-adv", "PACKAGE_dawn",
     "PACKAGE_umdns",
+)
+S20P_PASSWALL_DISABLED = tuple(
+    f"luci-app-passwall_INCLUDE_{backend}" for backend in (
+        "Haproxy", "Hysteria", "NaiveProxy", "Shadowsocks_Rust_Client",
+        "Shadowsocks_Rust_Server", "ShadowsocksR_Libev_Client",
+        "ShadowsocksR_Libev_Server", "Shadow_TLS", "Simple_Obfs", "SingBox",
+        "V2ray_Plugin", "Xray_Plugin",
+    )
+) + (
+    "haproxy", "haproxy-nossl", "hysteria", "naiveproxy",
+    "shadowsocks-rust-sslocal", "shadowsocks-rust-ssmanager",
+    "shadowsocks-rust-ssserver", "shadowsocks-rust-ssservice", "shadowsocks-rust-ssurl",
+    "shadowsocksr-libev-ssr-local", "shadowsocksr-libev-ssr-redir",
+    "shadowsocksr-libev-ssr-server", "shadow-tls", "simple-obfs-client",
+    "simple-obfs-server", "sing-box", "sing-box-tiny", "v2ray-plugin", "xray-plugin",
 )
 
 
@@ -140,6 +155,26 @@ class ProfileConfigTests(unittest.TestCase):
                 with self.subTest(profile=profile, package=package):
                     self.assertEqual(config[f"CONFIG_PACKAGE_{package}"], "y")
 
+    def test_s20p_passwall_only_xray_preserves_independent_components(self):
+        config = profile_config("SUPERGATEWAY-S20P")
+        for package in S20P_PASSWALL_DISABLED:
+            with self.subTest(disabled=package):
+                self.assertEqual(config[f"CONFIG_PACKAGE_{package}"], "n")
+        for package in (
+            "luci-app-passwall", "luci-app-passwall_INCLUDE_Xray", "xray-core",
+            "luci-app-daede", "luci-app-daede_daed", "daed", "luci-app-bandix",
+            "bandix", "luci-app-easytier", "easytier", "adguardhome", "luci-app-adguardhome",
+        ):
+            with self.subTest(preserved=package):
+                self.assertEqual(config[f"CONFIG_PACKAGE_{package}"], "y")
+        for option in (*MESH, "KERNEL_DEBUG_INFO_BTF", "BPF_TOOLCHAIN_HOST", "CCACHE"):
+            with self.subTest(preserved=option):
+                self.assertEqual(config[f"CONFIG_{option}"], "y")
+        for package in ("geoview", "v2ray-geoip", "v2ray-geosite",
+                        "luci-app-passwall_INCLUDE_Geoview"):
+            with self.subTest(helper=package):
+                self.assertNotEqual(config.get(f"CONFIG_PACKAGE_{package}"), "n")
+
 
 @unittest.skipUnless(BASH, "Bash is required for read-only CI checks")
 class ShellChecks(unittest.TestCase):
@@ -207,6 +242,29 @@ grep() {
                         result = self.run_guards(profile, updates={f"CONFIG_PACKAGE_{package}": value})
                         self.assertNotEqual(result.returncode, 0)
                         self.assertIn(f"unexpectedly includes {package}", result.stdout)
+
+    def test_s20p_other_passwall_backends_rejected_as_builtin_or_module(self):
+        for package in S20P_PASSWALL_DISABLED:
+            for value in ("y", "m"):
+                with self.subTest(package=package, value=value):
+                    result = self.run_guards("SUPERGATEWAY-S20P",
+                                             updates={f"CONFIG_PACKAGE_{package}": value})
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(f"Disabled S20P package selected after defconfig: "
+                                  f"CONFIG_PACKAGE_{package}={value}", result.stdout)
+
+    def test_s20p_xray_is_required_and_manual_overrides_remain_available(self):
+        for package in ("luci-app-passwall", "luci-app-passwall_INCLUDE_Xray", "xray-core"):
+            with self.subTest(required=package):
+                result = self.run_guards("SUPERGATEWAY-S20P",
+                                         updates={f"CONFIG_PACKAGE_{package}": "n"})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Required S20P setting missing", result.stdout)
+        result = self.run_guards("SUPERGATEWAY-S20P", updates={
+            "CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox": "y",
+            "CONFIG_PACKAGE_sing-box": "y",
+        }, overrides="CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox=y")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_mesh_dependencies_and_device_are_required(self):
         for profile in MESH_ONLY_PROFILES:
